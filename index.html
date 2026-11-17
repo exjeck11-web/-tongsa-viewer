@@ -78,18 +78,17 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-            <!-- 원본 PDF 일괄 연동 버튼 -->
-            <label class="cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow">
-                <i class="fa-solid fa-file-pdf"></i>
-                <span id="pdfStatusText">원본 PDF 6개 파일 불러오기</span>
+            <!-- 브라우저 영구 저장(IndexedDB) 연동 버튼 -->
+            <label class="cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow" title="한 번만 선택하면 브라우저에 영구 저장되어 다음부터 자동 로드됩니다">
+                <i class="fa-solid fa-database"></i>
+                <span id="pdfStatusText">PDF 영구 등록 (1회만)</span>
                 <input type="file" id="pdfFileInput" multiple accept="application/pdf" class="hidden">
             </label>
-            <!-- 개별 캡처 이미지 폴더 연동 버튼 -->
-            <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1.5" title="images/ 폴더에 캡처 이미지를 넣거나 직접 선택할 수 있습니다">
-                <i class="fa-regular fa-images"></i>
-                <span>캡처 이미지 선택</span>
-                <input type="file" id="imgFileInput" multiple accept="image/*" class="hidden">
-            </label>
+            <!-- 전 문항 캡처 이미지 일괄 추출 버튼 -->
+            <button id="exportAllCropsBtn" onclick="exportAllQuestionImages()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow" title="모든 문항을 개별 PNG 이미지로 일괄 추출합니다">
+                <i class="fa-solid fa-download"></i>
+                <span>전체 캡처본 저장</span>
+            </button>
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
                 <input type="text" id="searchInput" placeholder="단원, 키워드, 지역 검색..." 
@@ -3106,6 +3105,93 @@
         const renderedCropCache = {}; // { "25-03-1-09_0_1": dataUrl }
         const cropAdjustments = {}; // 사용자가 미세 조정한 상하 여백 저장
 
+        // ================= IndexedDB 브라우저 영구 저장소 엔진 =================
+        // 한 번 등록한 PDF와 캡처된 이미지를 브라우저에 영구 보관하여 재업로드 불필요
+        const DB_NAME = "GeographyExamArchiveDB";
+        const DB_VERSION = 1;
+        const PDF_STORE = "pdfFiles";
+        const IMG_STORE = "croppedImages";
+
+        function openArchiveDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(PDF_STORE)) {
+                        db.createObjectStore(PDF_STORE);
+                    }
+                    if (!db.objectStoreNames.contains(IMG_STORE)) {
+                        db.createObjectStore(IMG_STORE);
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function savePdfToDB(fileName, arrayBuffer) {
+            try {
+                const db = await openArchiveDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(PDF_STORE, "readwrite");
+                    tx.objectStore(PDF_STORE).put(arrayBuffer, fileName);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = (e) => reject(e.target.error);
+                });
+            } catch (e) {
+                console.warn("IndexedDB 저장 실패:", e);
+            }
+        }
+
+        async function loadAllPdfsFromDB() {
+            try {
+                const db = await openArchiveDB();
+                const tx = db.transaction(PDF_STORE, "readonly");
+                const store = tx.objectStore(PDF_STORE);
+                const keysReq = store.getAllKeys();
+
+                return new Promise((resolve) => {
+                    keysReq.onsuccess = async () => {
+                        const keys = keysReq.result || [];
+                        let count = 0;
+                        for (const key of keys) {
+                            const valReq = store.get(key);
+                            await new Promise((res) => {
+                                valReq.onsuccess = async () => {
+                                    if (valReq.result) {
+                                        try {
+                                            const pdfDoc = await pdfjsLib.getDocument({ data: valReq.result.slice(0) }).promise;
+                                            loadedPdfDocs[key] = pdfDoc;
+                                            count++;
+                                        } catch (err) {
+                                            console.warn("저장된 PDF 파싱 오류:", key, err);
+                                        }
+                                    }
+                                    res();
+                                };
+                                valReq.onerror = () => res();
+                            });
+                        }
+                        resolve(count);
+                    };
+                    keysReq.onerror = () => resolve(0);
+                });
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        async function clearSavedPdfs() {
+            const db = await openArchiveDB();
+            const tx = db.transaction([PDF_STORE, IMG_STORE], "readwrite");
+            tx.objectStore(PDF_STORE).clear();
+            tx.objectStore(IMG_STORE).clear();
+            Object.keys(loadedPdfDocs).forEach(k => delete loadedPdfDocs[k]);
+            Object.keys(renderedCropCache).forEach(k => delete renderedCropCache[k]);
+            updatePdfStatusBadge();
+            renderQuestionViewer();
+        }
+
         // 시험 회차명 -> 업로드하신 PDF 파일명 매핑
         const examToPdfFilename = {
             "2025학년도 3월 고1": "3월(1학년).pdf",
@@ -3144,120 +3230,138 @@
             "25-06-1-16": { file: "6월(1학년).pdf", page: 4, col: "R", y1: 0.06, y2: 0.54 },
             "25-06-1-18": { file: "6월(1학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.43 },
             "25-06-1-19": { file: "6월(1학년).pdf", page: 5, col: "L", y1: 0.43, y2: 0.93 },
-            "25-06-1-20": { file: "6월(1학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.48 },
-            "25-06-1-21": { file: "6월(1학년).pdf", page: 5, col: "R", y1: 0.48, y2: 0.93 },
-            "25-06-1-22": { file: "6월(1학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.54 },
+            "25-06-1-20": { file: "6월(1학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.45 },
+            "25-06-1-21": { file: "6월(1학년).pdf", page: 5, col: "R", y1: 0.45, y2: 0.93 },
+            "25-06-1-22": { file: "6월(1학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.56 },
             "25-06-1-24": { file: "6월(1학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.45 },
             "25-06-1-25": { file: "6월(1학년).pdf", page: 6, col: "R", y1: 0.45, y2: 0.93 },
 
             // 2025학년도 9월 고1 (9월(1학년).pdf)
             "25-09-1-01": { file: "9월(1학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.62 },
             "25-09-1-03": { file: "9월(1학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.55 },
-            "25-09-1-05": { file: "9월(1학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.62 },
-            "25-09-1-09": { file: "9월(1학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.52 },
-            "25-09-1-11": { file: "9월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.38 },
-            "25-09-1-12": { file: "9월(1학년).pdf", page: 3, col: "R", y1: 0.38, y2: 0.69 },
-            "25-09-1-14": { file: "9월(1학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.52 },
-            "25-09-1-17": { file: "9월(1학년).pdf", page: 4, col: "R", y1: 0.43, y2: 0.93 },
-            "25-09-1-19": { file: "9월(1학년).pdf", page: 5, col: "L", y1: 0.45, y2: 0.93 },
-            "25-09-1-21": { file: "9월(1학년).pdf", page: 5, col: "R", y1: 0.45, y2: 0.93 },
-            "25-09-1-23": { file: "9월(1학년).pdf", page: 6, col: "L", y1: 0.43, y2: 0.93 },
-            "25-09-1-24": { file: "9월(1학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.48 },
-            "25-09-1-25": { file: "9월(1학년).pdf", page: 6, col: "R", y1: 0.48, y2: 0.93 },
+            "25-09-1-05": { file: "9월(1학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.60 },
+            "25-09-1-09": { file: "9월(1학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.50 },
+            "25-09-1-11": { file: "9월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.36 },
+            "25-09-1-12": { file: "9월(1학년).pdf", page: 3, col: "R", y1: 0.36, y2: 0.68 },
+            "25-09-1-14": { file: "9월(1학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.50 },
+            "25-09-1-17": { file: "9월(1학년).pdf", page: 4, col: "R", y1: 0.44, y2: 0.93 },
+            "25-09-1-19": { file: "9월(1학년).pdf", page: 5, col: "L", y1: 0.47, y2: 0.93 },
+            "25-09-1-21": { file: "9월(1학년).pdf", page: 5, col: "R", y1: 0.47, y2: 0.93 },
+            "25-09-1-23": { file: "9월(1학년).pdf", page: 6, col: "L", y1: 0.42, y2: 0.93 },
+            "25-09-1-24": { file: "9월(1학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.47 },
+            "25-09-1-25": { file: "9월(1학년).pdf", page: 6, col: "R", y1: 0.47, y2: 0.93 },
 
             // 2025학년도 10월 고1 (10월(1학년).pdf)
-            "25-10-1-01": { file: "10월(1학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.56 },
-            "25-10-1-02": { file: "10월(1학년).pdf", page: 1, col: "L", y1: 0.56, y2: 0.93 },
+            "25-10-1-01": { file: "10월(1학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.54 },
+            "25-10-1-02": { file: "10월(1학년).pdf", page: 1, col: "L", y1: 0.54, y2: 0.93 },
             "25-10-1-03": { file: "10월(1학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.72 },
-            "25-10-1-04": { file: "10월(1학년).pdf", page: 1, col: "R", y1: 0.70, y2: 0.93 },
-            "25-10-1-08": { file: "10월(1학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.48 },
-            "25-10-1-09": { file: "10월(1학년).pdf", page: 2, col: "R", y1: 0.48, y2: 0.93 },
-            "25-10-1-12": { file: "10월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.54 },
-            "25-10-1-13": { file: "10월(1학년).pdf", page: 3, col: "R", y1: 0.52, y2: 0.93 },
-            "25-10-1-16": { file: "10월(1학년).pdf", page: 4, col: "R", y1: 0.06, y2: 0.45 },
-            "25-10-1-21": { file: "10월(1학년).pdf", page: 5, col: "R", y1: 0.46, y2: 0.93 },
-            "25-09-1-25-2": { file: "10월(1학년).pdf", page: 6, col: "R", y1: 0.46, y2: 0.93 },
+            "25-10-1-04": { file: "10월(1학년).pdf", page: 1, col: "R", y1: 0.72, y2: 0.93 },
+            "25-10-1-08": { file: "10월(1학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.50 },
+            "25-10-1-09": { file: "10월(1학년).pdf", page: 2, col: "R", y1: 0.50, y2: 0.93 },
+            "25-10-1-12": { file: "10월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.56 },
+            "25-10-1-13": { file: "10월(1학년).pdf", page: 3, col: "R", y1: 0.56, y2: 0.93 },
+            "25-10-1-16": { file: "10월(1학년).pdf", page: 4, col: "R", y1: 0.06, y2: 0.47 },
+            "25-10-1-21": { file: "10월(1학년).pdf", page: 5, col: "R", y1: 0.50, y2: 0.93 },
+            "25-09-1-25-2": { file: "10월(1학년).pdf", page: 6, col: "R", y1: 0.48, y2: 0.93 },
 
             // 2026학년도 3월 고2 (3월(2학년).pdf)
-            "26-03-2-01": { file: "3월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.56 },
-            "26-03-2-03": { file: "3월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.54 },
-            "26-03-2-04": { file: "3월(2학년).pdf", page: 1, col: "R", y1: 0.54, y2: 0.93 },
-            "26-03-2-05": { file: "3월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.48 },
-            "26-03-2-06": { file: "3월(2학년).pdf", page: 2, col: "L", y1: 0.48, y2: 0.93 },
-            "26-03-2-07": { file: "3월(2학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.48 },
-            "26-03-2-08": { file: "3월(2학년).pdf", page: 2, col: "R", y1: 0.48, y2: 0.93 },
-            "26-03-2-11": { file: "3월(2학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.46 },
+            "26-03-2-01": { file: "3월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.55 },
+            "26-03-2-03": { file: "3월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.53 },
+            "26-03-2-04": { file: "3월(2학년).pdf", page: 1, col: "R", y1: 0.53, y2: 0.93 },
+            "26-03-2-05": { file: "3월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.50 },
+            "26-03-2-06": { file: "3월(2학년).pdf", page: 2, col: "L", y1: 0.50, y2: 0.93 },
+            "26-03-2-07": { file: "3월(2학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.50 },
+            "26-03-2-08": { file: "3월(2학년).pdf", page: 2, col: "R", y1: 0.50, y2: 0.93 },
+            "26-03-2-11": { file: "3월(2학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.48 },
             "26-03-2-13": { file: "3월(2학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.50 },
             "26-03-2-14": { file: "3월(2학년).pdf", page: 4, col: "L", y1: 0.50, y2: 0.93 },
             "26-03-2-16": { file: "3월(2학년).pdf", page: 4, col: "R", y1: 0.45, y2: 0.93 },
-            "26-03-2-20": { file: "3월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.48 },
-            "26-03-2-23": { file: "3월(2학년).pdf", page: 6, col: "L", y1: 0.43, y2: 0.93 },
+            "26-03-2-20": { file: "3월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.50 },
+            "26-03-2-23": { file: "3월(2학년).pdf", page: 6, col: "L", y1: 0.42, y2: 0.93 },
 
             // 2026학년도 6월 고2 (6월(2학년).pdf)
-            "26-06-2-01": { file: "6월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.52 },
-            "26-06-2-03": { file: "6월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.56 },
+            "26-06-2-01": { file: "6월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.53 },
+            "26-06-2-03": { file: "6월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.55 },
             "26-06-2-05": { file: "6월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.52 },
             "26-06-2-07": { file: "6월(2학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.50 },
             "26-06-2-08": { file: "6월(2학년).pdf", page: 2, col: "R", y1: 0.50, y2: 0.93 },
             "26-06-2-11": { file: "6월(2학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.48 },
             "26-06-2-12": { file: "6월(2학년).pdf", page: 3, col: "R", y1: 0.48, y2: 0.93 },
-            "26-06-2-16": { file: "6월(2학년).pdf", page: 4, col: "R", y1: 0.43, y2: 0.93 },
-            "26-06-2-17": { file: "6월(2학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.46 },
-            "26-06-2-18": { file: "6월(2학년).pdf", page: 5, col: "L", y1: 0.46, y2: 0.93 },
+            "26-06-2-16": { file: "6월(2학년).pdf", page: 4, col: "R", y1: 0.45, y2: 0.93 },
+            "26-06-2-17": { file: "6월(2학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.47 },
+            "26-06-2-18": { file: "6월(2학년).pdf", page: 5, col: "L", y1: 0.47, y2: 0.93 },
             "26-06-2-19": { file: "6월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.38 },
-            "26-06-2-22": { file: "6월(2학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.52 },
+            "26-06-2-22": { file: "6월(2학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.55 },
             "26-06-2-24": { file: "6월(2학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.48 },
             "26-06-2-25": { file: "6월(2학년).pdf", page: 6, col: "R", y1: 0.48, y2: 0.93 },
 
             // 2026학년도 9월 고2 (9월(2학년).pdf)
-            "26-09-2-01": { file: "9월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.55 },
-            "26-09-2-02": { file: "9월(2학년).pdf", page: 1, col: "L", y1: 0.55, y2: 0.93 },
+            "26-09-2-01": { file: "9월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.56 },
+            "26-09-2-02": { file: "9월(2학년).pdf", page: 1, col: "L", y1: 0.56, y2: 0.93 },
             "26-09-2-03": { file: "9월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.52 },
-            "26-09-2-05": { file: "9월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.42 },
-            "26-09-2-06": { file: "9월(2학년).pdf", page: 2, col: "L", y1: 0.42, y2: 0.68 },
+            "26-09-2-05": { file: "9월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.40 },
+            "26-09-2-06": { file: "9월(2학년).pdf", page: 2, col: "L", y1: 0.40, y2: 0.68 },
             "26-09-2-08": { file: "9월(2학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.72 },
             "26-09-2-10": { file: "9월(2학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.55 },
             "26-09-2-14": { file: "9월(2학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.52 },
-            "26-09-2-17": { file: "9월(2학년).pdf", page: 4, col: "R", y1: 0.48, y2: 0.93 },
-            "26-09-2-18": { file: "9월(2학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.52 },
-            "26-09-2-19": { file: "9월(2학년).pdf", page: 5, col: "L", y1: 0.28, y2: 0.93 },
-            "26-09-2-20": { file: "9월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.48 },
+            "26-09-2-17": { file: "9월(2학년).pdf", page: 4, col: "R", y1: 0.52, y2: 0.93 },
+            "26-09-2-18": { file: "9월(2학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.50 },
+            "26-09-2-19": { file: "9월(2학년).pdf", page: 5, col: "L", y1: 0.50, y2: 0.93 },
+            "26-09-2-20": { file: "9월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.50 },
             "26-09-2-22": { file: "9월(2학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.50 },
             "26-09-2-23": { file: "9월(2학년).pdf", page: 6, col: "L", y1: 0.48, y2: 0.93 },
             "26-09-2-25": { file: "9월(2학년).pdf", page: 6, col: "R", y1: 0.52, y2: 0.93 },
 
             // 2026학년도 10월 고2 (10월(2학년).pdf)
-            "26-10-2-01": { file: "10월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.54 },
-            "26-10-2-02": { file: "10월(2학년).pdf", page: 1, col: "L", y1: 0.54, y2: 0.93 },
+            "26-10-2-01": { file: "10월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.55 },
+            "26-10-2-02": { file: "10월(2학년).pdf", page: 1, col: "L", y1: 0.55, y2: 0.93 },
             "26-10-2-03": { file: "10월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.56 },
-            "26-10-2-07": { file: "10월(2학년).pdf", page: 2, col: "L", y1: 0.62, y2: 0.93 },
-            "26-10-2-09": { file: "10월(2학년).pdf", page: 2, col: "R", y1: 0.36, y2: 0.93 },
+            "26-10-2-07": { file: "10월(2학년).pdf", page: 2, col: "L", y1: 0.65, y2: 0.93 },
+            "26-10-2-09": { file: "10월(2학년).pdf", page: 2, col: "R", y1: 0.38, y2: 0.93 },
             "26-10-2-10": { file: "10월(2학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.50 },
             "26-10-2-12": { file: "10월(2학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.55 },
             "26-10-2-24": { file: "10월(2학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.72 },
-            "26-10-2-25": { file: "10월(2학년).pdf", page: 6, col: "R", y1: 0.35, y2: 0.93 }
+            "26-10-2-25": { file: "10월(2학년).pdf", page: 6, col: "R", y1: 0.50, y2: 0.93 }
         };
 
-        // 동일 폴더에 PDF 파일이 있을 경우 자동으로 fetch 시도 (GitHub/Vercel 배포 시 편리)
+        // 1순위: IndexedDB 영구 저장소 확인 -> 2순위: 동일 폴더(GitHub/Vercel 서버) PDF 자동 fetch
         async function tryAutoLoadPdfs() {
+            // 1) 브라우저 영구 저장소(IndexedDB)에서 먼저 자동 복원
+            const dbLoadedCount = await loadAllPdfsFromDB();
+            if (dbLoadedCount > 0) {
+                updatePdfStatusBadge();
+                renderQuestionViewer();
+            }
+
+            // 2) 서버(GitHub Pages / Vercel)의 동일 폴더 또는 ./pdfs/ 폴더에서 자동 로드 시도
             const pdfFiles = Object.values(examToPdfFilename);
             const uniqueFiles = [...new Set(pdfFiles)];
-            let loadedCount = 0;
+            let serverLoadedCount = 0;
 
             for (const fileName of uniqueFiles) {
-                try {
-                    const response = await fetch(`./${encodeURIComponent(fileName)}`);
-                    if (response.ok) {
-                        const arrayBuffer = await response.arrayBuffer();
-                        const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                        loadedPdfDocs[fileName] = pdfDoc;
-                        loadedCount++;
+                if (loadedPdfDocs[fileName]) continue; // 이미 DB에서 로드된 경우 패스
+                const candidatePaths = [
+                    `./${encodeURIComponent(fileName)}`,
+                    `./pdfs/${encodeURIComponent(fileName)}`,
+                    `./${fileName}`
+                ];
+                for (const path of candidatePaths) {
+                    try {
+                        const response = await fetch(path);
+                        if (response.ok && response.headers.get("content-type")?.includes("pdf")) {
+                            const arrayBuffer = await response.arrayBuffer();
+                            await savePdfToDB(fileName, arrayBuffer.slice(0));
+                            const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                            loadedPdfDocs[fileName] = pdfDoc;
+                            serverLoadedCount++;
+                            break;
+                        }
+                    } catch (e) {
+                        // 정적 파일이 없을 경우 무시
                     }
-                } catch (e) {
-                    // 로컬 파일 시스템이나 PDF 미업로드 상태에서는 무시
                 }
             }
-            if (loadedCount > 0) {
+            if (serverLoadedCount > 0) {
                 updatePdfStatusBadge();
                 renderQuestionViewer();
             }
@@ -3266,24 +3370,27 @@
         function updatePdfStatusBadge() {
             const count = Object.keys(loadedPdfDocs).length;
             const statusEl = document.getElementById("pdfStatusText");
+            const exportBtn = document.getElementById("exportAllCropsBtn");
             if (count > 0) {
-                statusEl.textContent = `원본 PDF ${count}개 연동됨 (추가 선택)`;
+                statusEl.innerHTML = `PDF ${count}개 영구 저장됨 <span class="underline ml-1 text-[10px] opacity-80">(추가/갱신)</span>`;
+                if (exportBtn) exportBtn.classList.remove("hidden");
+            } else {
+                statusEl.textContent = "PDF 영구 등록 (1회만)";
+                if (exportBtn) exportBtn.classList.add("hidden");
             }
         }
 
-        // 사용자가 PDF 파일을 직접 선택했을 때 처리
+        // 사용자가 PDF 파일을 직접 선택했을 때 처리 (즉시 IndexedDB에 영구 저장)
         document.getElementById("pdfFileInput").addEventListener("change", async (e) => {
             const files = Array.from(e.target.files);
             if (!files.length) return;
 
             const statusEl = document.getElementById("pdfStatusText");
-            statusEl.textContent = "PDF 분석 및 캡처 준비 중...";
+            statusEl.textContent = "영구 저장 및 캡처 중...";
 
             for (const file of files) {
                 try {
                     const arrayBuffer = await file.arrayBuffer();
-                    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                    // 파일명 매칭 (공백 제거 등 유연한 매칭 지원)
                     const cleanName = file.name.replace(/\s+/g, "");
                     let matchedKey = file.name;
                     for (const stdName of Object.values(examToPdfFilename)) {
@@ -3292,27 +3399,41 @@
                             break;
                         }
                     }
+                    // 브라우저 IndexedDB에 영구 저장 (다음 접속 시 자동 로드)
+                    await savePdfToDB(matchedKey, arrayBuffer.slice(0));
+                    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     loadedPdfDocs[matchedKey] = pdfDoc;
                 } catch (err) {
                     console.error("PDF 로드 오류:", file.name, err);
                 }
             }
 
-            // 기존 캡처 캐시 초기화 후 현재 문항 즉시 렌더링
             Object.keys(renderedCropCache).forEach(k => delete renderedCropCache[k]);
             updatePdfStatusBadge();
             renderQuestionViewer();
         });
 
-        // 사용자가 개별 캡처 이미지 파일(예: 25-03-1-09.png 등)을 선택했을 때 처리
-        document.getElementById("imgFileInput").addEventListener("change", (e) => {
-            const files = Array.from(e.target.files);
-            files.forEach(file => {
-                const baseName = file.name.replace(/\.[^/.]+$/, "");
-                customImageBlobs[baseName] = URL.createObjectURL(file);
-            });
-            renderQuestionViewer();
-        });
+        // 전 문항 캡처 이미지를 일괄 생성하여 다운로드 (GitHub images/ 폴더 업로드용)
+        async function exportAllQuestionImages() {
+            const exportBtn = document.getElementById("exportAllCropsBtn");
+            const origHtml = exportBtn.innerHTML;
+            let count = 0;
+
+            for (const q of questionsData) {
+                exportBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>추출 중 (${++count}/${questionsData.length})</span>`;
+                const dataUrl = await cropQuestionFromPdf(q.id);
+                if (dataUrl) {
+                    const a = document.createElement("a");
+                    a.href = dataUrl;
+                    a.download = `${q.id}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    await new Promise(r => setTimeout(r, 180));
+                }
+            }
+            exportBtn.innerHTML = origHtml;
+        }
 
         // PDF에서 특정 문항 영역만 크롭하여 Canvas -> DataURL 이미지로 추출
         async function cropQuestionFromPdf(questionId) {
@@ -3562,33 +3683,35 @@
                                             <span>원본 PDF(${coord.file} ${coord.page}쪽)에서 <strong>${q.number}</strong> 문항을 캡처하고 있습니다...</span>
                                         </div>
                                     ` : `
-                                        <!-- images/{id}.png 자동 로드 시도 후 실패 시 PDF 선택 안내창 표시 -->
+                                        <!-- images/{id}.png 자동 로드 시도 후 실패 시 1회 영구 등록 안내창 표시 -->
                                         <img src="./images/${q.id}.png" alt="${q.exam} ${q.number} 원본 캡처" 
                                              class="max-w-full h-auto rounded shadow-sm"
                                              onerror="this.style.display='none'; document.getElementById('pdfFallbackGuide').classList.remove('hidden');" />
                                         <div id="pdfFallbackGuide" class="hidden w-full p-6 text-center space-y-4 bg-slate-50 rounded-lg border border-dashed border-slate-300">
                                             <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-xl">
-                                                <i class="fa-solid fa-file-pdf"></i>
+                                                <i class="fa-solid fa-database"></i>
                                             </div>
-                                            <div class="space-y-1">
-                                                <h4 class="text-base font-bold text-slate-900">원본 시험지 캡처 화면을 띄우려면 PDF 파일을 선택해 주세요!</h4>
-                                                <p class="text-xs text-slate-600 leading-relaxed max-w-md mx-auto">
-                                                    상단 노란색 <strong>[원본 PDF 6개 파일 불러오기]</strong> 버튼을 눌러 가지고 계신 모의고사 PDF 파일(예: <code>${coord.file}</code>)을 한 번만 선택해 주시면, 각 문항의 좌표(<strong>${coord.page}쪽 ${coord.col === 'L' ? '왼쪽 단' : '오른쪽 단'}</strong>)를 자동으로 크롭하여 실제 시험지 캡처 이미지 그대로 보여줍니다.
+                                            <div class="space-y-1.5">
+                                                <h4 class="text-base font-bold text-slate-900">매번 업로드할 필요 없이, 지금 딱 1회만 등록해 주세요!</h4>
+                                                <p class="text-xs text-slate-600 leading-relaxed max-w-lg mx-auto">
+                                                    제가 텍스트 코드 파일(<code>.html</code>) 안에 수십 MB의 원본 PDF 8개를 직접 심을 수는 없지만, <strong>아래 버튼으로 PDF 파일들을 딱 한 번만 선택</strong>해 주시면 <strong>브라우저 영구 저장소(IndexedDB)에 자동 보관</strong>되어 내일이나 다음 주에 다시 켜도 업로드 없이 즉시 원본 이미지가 뜹니다!
                                                 </p>
                                             </div>
                                             <div class="flex flex-wrap justify-center gap-2 pt-1">
                                                 <label class="cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-4 py-2.5 rounded-lg transition inline-flex items-center gap-1.5 shadow">
-                                                    <i class="fa-solid fa-folder-open"></i>
-                                                    <span>지금 PDF 파일 선택하기 (${coord.file})</span>
+                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                    <span>원본 PDF 한 번만 영구 등록하기 (${coord.file} 등)</span>
                                                     <input type="file" multiple accept="application/pdf" class="hidden" onchange="document.getElementById('pdfFileInput').files = this.files; document.getElementById('pdfFileInput').dispatchEvent(new Event('change'));">
                                                 </label>
                                                 <button onclick="setViewMode('text')" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold px-3.5 py-2.5 rounded-lg transition">
-                                                    임시로 텍스트 재구성본 보기
+                                                    텍스트 재구성본으로 보기
                                                 </button>
                                             </div>
-                                            <p class="text-[11px] text-slate-400">
-                                                💡 GitHub & Vercel 배포 시 저장소에 PDF 파일(<code>3월(1학년).pdf</code> 등)을 함께 올려두시면 별도 선택 없이 접속 즉시 원본 캡처 화면이 자동으로 나타납니다.
-                                            </p>
+                                            <div class="text-left bg-white p-3.5 rounded-lg border border-slate-200 text-[11px] text-slate-600 space-y-1 max-w-lg mx-auto">
+                                                <div class="font-bold text-slate-800"><i class="fa-brands fa-github mr-1"></i>학생들에게 링크로 공유할 때 (아무도 업로드 안 해도 되게 하는 법)</div>
+                                                <div>1. GitHub 저장소에 <code>index.html</code>을 올릴 때 <strong>모의고사 PDF 파일들(<code>3월(1학년).pdf</code> 등)을 같은 폴더에 함께 드래그해서 업로드</strong>하세요.</div>
+                                                <div>2. 그러면 Vercel 웹페이지 주소에 접속하는 모든 학생·선생님 화면에서 서버의 PDF를 자동으로 읽어와 <strong>0.1초 만에 원본 캡처 이미지가 바로 나타납니다!</strong></div>
+                                            </div>
                                         </div>
                                     `}
                                 </div>

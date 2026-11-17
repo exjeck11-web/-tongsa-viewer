@@ -80,114 +80,92 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-            <!-- 1) PDF 저장 상태 표시 배지 (클릭 시 회차별 등록 현황 및 개별 업로드 모달 열기) -->
-            <button type="button" onclick="openPdfManagerModal()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow-inner" title="클릭하여 회차별 PDF 등록 현황 및 통일된 파일명 안내 보기">
+            <!-- 1) PDF 저장 상태 표시 배지 (클릭 시 회차별 등록 현황 및 무제한 추가/관리 모달 열기) -->
+            <button type="button" onclick="openPdfManagerModal()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow-inner" title="클릭하여 회차별 PDF 등록 현황 및 신규 회차 관리">
                 <i class="fa-solid fa-database"></i>
-                <span id="pdfStatusText">저장된 PDF: 0 / 8개</span>
+                <span id="pdfStatusText">저장된 PDF: 0개</span>
                 <i class="fa-solid fa-circle-info text-slate-400 text-[11px] ml-0.5"></i>
             </button>
-            <!-- 2) 구분된 PDF 추가 / 갱신 전용 버튼 -->
-            <label class="cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow" title="표준 파일명(예: 2025학년도 1학년 3월.pdf)으로 PDF를 추가하거나 갱신합니다">
+            <!-- 2) 구분된 PDF 추가 / 갱신 전용 버튼 (무제한 추가 지원) -->
+            <label class="cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow" title="기존 회차 갱신 및 새로운 모의고사 PDF를 개수 제한 없이 추가합니다">
                 <i class="fa-solid fa-file-arrow-up"></i>
                 <span>PDF 추가 / 갱신</span>
                 <input type="file" id="pdfFileInput" multiple accept="application/pdf" class="hidden">
             </label>
+            <!-- 2-1) 신규 기출 문항 등록 버튼 -->
+            <button type="button" onclick="openAddQuestionModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow" title="새로 업로드한 PDF의 지리 문항을 목록에 추가합니다">
+                <i class="fa-solid fa-plus"></i>
+                <span>문항 등록</span>
+            </button>
             <!-- 3) 전 문항 캡처 이미지 ZIP 압축파일 일괄 저장 버튼 -->
             <button id="exportAllCropsBtn" onclick="exportAllQuestionImages()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow" title="모든 문항을 캡처하여 단일 ZIP 압축파일로 한 번에 다운로드합니다">
                 <i class="fa-solid fa-file-zipper"></i>
                 <span>전체 캡처본 ZIP 저장</span>
             </button>
             <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
-                <input type="text" id="searchInput" placeholder="단원, 키워드, 지역 검색..." 
-                    class="pl-9 pr-4 py-1.5 bg-slate-800 text-sm text-white rounded-lg border border-slate-700 focus:outline-none focus:border-blue-500 w-44 md:w-56 transition">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="searchInput" placeholder="단원, 주제, 키워드 검색..." 
+                    class="bg-slate-800 text-white text-xs rounded-lg pl-8 pr-3 py-2 border border-slate-700 focus:outline-none focus:border-blue-500 w-44 md:w-56">
             </div>
-            <button id="quizModeToggle" class="bg-blue-600 hover:bg-blue-500 text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center space-x-1.5 shadow">
+            <button id="quizModeToggle" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow">
                 <i class="fa-solid fa-pencil"></i>
-                <span>풀이 모드: ON</span>
+                <span>문제 풀이 모드: ON</span>
             </button>
         </div>
     </header>
 
-    <!-- KPI & Filter Bar -->
-    <section class="bg-white border-b border-slate-200 px-6 py-3 shrink-0">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <!-- Unit Filter Tabs -->
-            <div class="flex flex-wrap items-center gap-1.5" id="unitTabs">
-                <button data-unit="all" class="unit-tab active px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white transition flex items-center space-x-1.5">
-                    <span>전체 문항</span>
-                    <span class="bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded text-[10px]" id="count-all">0</span>
-                </button>
-                <button data-unit="1단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span>1단원 (행복/관점/택리지)</span>
-                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-1">0</span>
-                </button>
-                <button data-unit="3단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>3단원 (자연환경과 인간)</span>
-                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-3">0</span>
-                </button>
-                <button data-unit="6단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                    <span>6단원 (문화권과 문화 변동)</span>
-                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-6">0</span>
-                </button>
-                <button data-unit="7단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span>7단원 (인구·도시·자원·세계화)</span>
-                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-7">0</span>
-                </button>
-            </div>
-
-            <!-- Exam Session Filter -->
-            <div class="flex items-center space-x-2">
-                <label for="examSelect" class="text-xs font-semibold text-slate-500">시험 회차:</label>
-                <select id="examSelect" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 font-medium focus:outline-none focus:border-blue-500">
-                    <option value="all">모든 회차 보기</option>
-                    <option value="2025학년도 3월 고1">2025학년도 3월 고1</option>
-                    <option value="2025학년도 6월 고1">2025학년도 6월 고1</option>
-                    <option value="2025학년도 9월 고1">2025학년도 9월 고1</option>
-                    <option value="2025학년도 10월 고1">2025학년도 10월 고1</option>
-                    <option value="2026학년도 3월 고2">2026학년도 3월 고2</option>
-                    <option value="2026학년도 6월 고2">2026학년도 6월 고2</option>
-                    <option value="2026학년도 9월 고2">2026학년도 9월 고2</option>
-                    <option value="2026학년도 10월 고2">2026학년도 10월 고2</option>
-                </select>
-            </div>
+    <!-- Unit Filter Tabs & Exam Selector -->
+    <div class="bg-white border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex flex-wrap items-center gap-1.5" id="unitTabs">
+            <button data-unit="all" class="unit-tab active bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                전체 (<span id="count-all">0</span>)
+            </button>
+            <button data-unit="1단원" class="unit-tab bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                1단원 행복·정주 (<span id="count-1">0</span>)
+            </button>
+            <button data-unit="3단원" class="unit-tab bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                3단원 자연환경 (<span id="count-3">0</span>)
+            </button>
+            <button data-unit="6단원" class="unit-tab bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                6단원 문화권 (<span id="count-6">0</span>)
+            </button>
+            <button data-unit="7단원" class="unit-tab bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                7단원 인구·도시·자원 (<span id="count-7">0</span>)
+            </button>
         </div>
-    </section>
+        <div class="flex items-center space-x-2">
+            <label for="examSelect" class="text-xs font-bold text-slate-500">시험 회차:</label>
+            <select id="examSelect" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold text-slate-700 focus:outline-none focus:border-blue-500">
+                <option value="all">모든 회차 보기</option>
+            </select>
+        </div>
+    </div>
 
-    <!-- Main Content Area (Split View) -->
+    <!-- Main Split Layout (Left: Question List, Right: Original Capture & Question Viewer) -->
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        
-        <!-- Left Panel: Question List Table -->
-        <div class="w-full md:w-5/12 lg:w-1/2 border-r border-slate-200 bg-white flex flex-col h-1/2 md:h-full">
-            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs font-semibold text-slate-500">
-                <span>문항 목록 (클릭하여 원본 형태 문제 보기)</span>
-                <span id="filteredCountText">총 0문항</span>
+        <!-- Left Sidebar: Question List -->
+        <aside class="w-full md:w-80 lg:w-96 bg-white border-r border-slate-200 flex flex-col h-1/3 md:h-full shrink-0">
+            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>지리 파트 기출문항 목록</span>
+                <span id="filteredCountText" class="text-blue-600">총 0문항</span>
             </div>
-            <div class="flex-1 overflow-y-auto divide-y divide-slate-100" id="questionListContainer">
-                <!-- Javascript will populate items here -->
-            </div>
-        </div>
+            <div id="questionListContainer" class="flex-1 overflow-y-auto divide-y divide-slate-100"></div>
+        </aside>
 
-        <!-- Right Panel: Actual Question Viewer -->
-        <div class="w-full md:w-7/12 lg:w-1/2 bg-slate-100 flex flex-col h-1/2 md:h-full overflow-y-auto p-4 md:p-6" id="questionViewerContainer">
-            <!-- Javascript will populate the selected question here -->
-        </div>
-
+        <!-- Right Content: Question Detail & PDF Crop Viewer -->
+        <section id="questionViewerContainer" class="flex-1 bg-slate-100 overflow-y-auto p-4 md:p-6 flex flex-col">
+        </section>
     </main>
 
-    <!-- PDF 파일명 통일 안내 및 회차별 개별 추가/갱신 관리 모달 -->
+    <!-- PDF 파일명 통일 안내 및 회차별 무제한 추가/갱신 관리 모달 -->
     <div id="pdfManagerModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden">
             <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
                 <div class="flex items-center space-x-2.5">
                     <i class="fa-solid fa-folder-tree text-amber-400 text-lg"></i>
                     <div>
-                        <h3 class="font-bold text-base">모의고사 PDF 회차별 관리 및 표준 파일명 안내</h3>
-                        <p class="text-[11px] text-slate-400">헷갈리지 않도록 아래 통일된 파일명으로 업로드하거나 회차별로 개별 갱신할 수 있습니다.</p>
+                        <h3 class="font-bold text-base">모의고사 PDF 회차별 관리 (무제한 확장 지원)</h3>
+                        <p class="text-[11px] text-slate-400">기존 회차뿐만 아니라 새로운 연도·월의 모의고사 PDF도 제한 없이 계속 추가할 수 있습니다.</p>
                     </div>
                 </div>
                 <button onclick="closePdfManagerModal()" class="text-slate-400 hover:text-white text-lg px-2">
@@ -197,17 +175,45 @@
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-900 flex items-start justify-between gap-3">
                     <div class="space-y-1">
-                        <div class="font-bold"><i class="fa-solid fa-circle-check mr-1"></i>통일된 표준 업로드 파일명 규칙 (권장)</div>
-                        <div>파일명을 <strong><code>2025학년도 1학년 3월.pdf</code></strong> 형태로 통일해 두시면 관리하기 가장 깔끔합니다. (기존 <code>3월(1학년).pdf</code> 이름도 자동 인식하여 표준 명칭으로 매핑합니다.)</div>
+                        <div class="font-bold"><i class="fa-solid fa-circle-check mr-1"></i>통일된 표준 업로드 파일명 규칙 (신규 회차 자동 인식)</div>
+                        <div>파일명을 <strong><code>2026학년도 1학년 3월.pdf</code></strong>처럼 <strong><code>YYYY학년도 N학년 M월.pdf</code></strong> 형태로 올려주시면 새 회차도 자동으로 목록에 생성됩니다!</div>
                     </div>
                     <label class="shrink-0 cursor-pointer bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-2 rounded-lg transition inline-flex items-center gap-1.5 shadow-xs">
                         <i class="fa-solid fa-upload"></i>
-                        <span>일괄 선택 업로드</span>
+                        <span>PDF 일괄 추가</span>
                         <input type="file" multiple accept="application/pdf" class="hidden" onchange="handleFilesUpload(this.files)">
                     </label>
                 </div>
 
-                <!-- 8개 회차별 등록 상태 및 개별 추가/갱신 리스트 -->
+                <!-- 새 회차 슬롯 수동 생성 바 -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span class="font-bold text-slate-700"><i class="fa-solid fa-calendar-plus mr-1 text-indigo-600"></i>새 모의고사 회차 직접 추가:</span>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <input type="number" id="newSlotYear" value="2026" min="2015" max="2035" class="w-20 px-2 py-1 border border-slate-300 rounded text-center font-semibold" title="학년도">
+                        <span class="text-slate-600">학년도</span>
+                        <select id="newSlotGrade" class="px-2 py-1 border border-slate-300 rounded bg-white font-semibold">
+                            <option value="1">1학년 (고1)</option>
+                            <option value="2">2학년 (고2)</option>
+                            <option value="3">3학년 (고3)</option>
+                        </select>
+                        <select id="newSlotMonth" class="px-2 py-1 border border-slate-300 rounded bg-white font-semibold">
+                            <option value="3">3월</option>
+                            <option value="5">5월</option>
+                            <option value="6">6월</option>
+                            <option value="7">7월</option>
+                            <option value="9">9월</option>
+                            <option value="10">10월</option>
+                            <option value="11">11월</option>
+                        </select>
+                        <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1 rounded transition inline-flex items-center gap-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>PDF 선택 등록</span>
+                            <input type="file" accept="application/pdf" class="hidden" onchange="handleCreateNewSlotUpload(this.files[0])">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 전체 회차별 등록 상태 및 개별 추가/갱신/삭제 리스트 -->
                 <div class="border border-slate-200 rounded-xl divide-y divide-slate-200 overflow-hidden" id="pdfSlotList">
                     <!-- JS에서 동적 렌더링 -->
                 </div>
@@ -221,6 +227,101 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 신규 기출 문항 추가 모달 (새로 추가된 PDF의 문항을 손쉽게 등록) -->
+    <div id="addQuestionModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-xl w-full overflow-hidden">
+            <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fa-solid fa-file-circle-plus text-indigo-400 text-lg"></i>
+                    <div>
+                        <h3 class="font-bold text-base">새 지리 파트 기출 문항 추가</h3>
+                        <p class="text-[11px] text-slate-400">새로 업로드한 PDF의 페이지와 단(좌/우), 상하 위치만 지정하면 원본 캡처 뷰어에 즉시 연동됩니다.</p>
+                    </div>
+                </div>
+                <button onclick="closeAddQuestionModal()" class="text-slate-400 hover:text-white text-lg px-2">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="addQuestionForm" onsubmit="handleAddNewQuestion(event)" class="p-6 space-y-3.5 max-h-[78vh] overflow-y-auto text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">시험 회차 (연동할 PDF)</label>
+                        <select id="nqExam" required class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white font-semibold text-slate-800"></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">단원 분류</label>
+                        <select id="nqUnit" required class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white font-semibold text-slate-800">
+                            <option value="1단원">1단원. 인간, 사회, 환경과 행복</option>
+                            <option value="3단원" selected>3단원. 자연환경과 인간</option>
+                            <option value="6단원">6단원. 문화 지역과 문화 변동</option>
+                            <option value="7단원">7단원. 글로벌 교류와 지역 변화</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">문항 번호</label>
+                        <input type="text" id="nqNumber" placeholder="예: 14번" required class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">배점</label>
+                        <input type="text" id="nqPoints" value="2점" required class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">정답 번호 (1~5)</label>
+                        <select id="nqAnswer" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                            <option value="1">① (1번)</option>
+                            <option value="2">② (2번)</option>
+                            <option value="3">③ (3번)</option>
+                            <option value="4">④ (4번)</option>
+                            <option value="5">⑤ (5번)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">소단원명</label>
+                    <input type="text" id="nqSubUnit" placeholder="예: 3-1. 자연환경과 인간 생활" required class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">문항 핵심 주제 (목록에 표시될 제목)</label>
+                    <input type="text" id="nqTopic" placeholder="예: 열대 고산 기후와 주민 생활" required class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5">
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                    <div class="font-bold text-slate-800"><i class="fa-solid fa-crop-simple mr-1 text-blue-600"></i>원본 PDF 내 캡처 좌표 지정 (등록 후 화면에서도 위/아래 확장 가능)</div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-[11px] text-slate-500 mb-0.5">PDF 쪽수(Page)</label>
+                            <input type="number" id="nqPage" value="1" min="1" max="20" required class="w-full border border-slate-300 rounded px-2 py-1 text-center font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-500 mb-0.5">좌/우 단(Column)</label>
+                            <select id="nqCol" class="w-full border border-slate-300 rounded px-2 py-1 bg-white font-bold">
+                                <option value="L">왼쪽 단 (L)</option>
+                                <option value="R">오른쪽 단 (R)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-500 mb-0.5">시작 높이(0.0~1.0)</label>
+                            <input type="number" id="nqY1" value="0.06" step="0.02" min="0.0" max="0.9" required class="w-full border border-slate-300 rounded px-2 py-1 text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-500 mb-0.5">끝 높이(0.1~1.0)</label>
+                            <input type="number" id="nqY2" value="0.52" step="0.02" min="0.1" max="1.0" required class="w-full border border-slate-300 rounded px-2 py-1 text-center">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">해설 요약</label>
+                    <textarea id="nqExplanation" rows="2" placeholder="정답 해설을 입력하세요..." class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAddQuestionModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-slate-100">취소</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow">문항 저장 및 캡처 연동</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -3159,11 +3260,12 @@
         const cropAdjustments = {}; // 사용자가 미세 조정한 상하 여백 저장
 
         // ================= IndexedDB 브라우저 영구 저장소 엔진 =================
-        // 한 번 등록한 PDF와 캡처된 이미지를 브라우저에 영구 보관하여 재업로드 불필요
+        // 한 번 등록한 PDF, 추가된 회차 메타데이터, 사용자 추가 문항을 브라우저에 영구 보관하여 무제한 확장 지원
         const DB_NAME = "GeographyExamArchiveDB";
-        const DB_VERSION = 1;
+        const DB_VERSION = 2;
         const PDF_STORE = "pdfFiles";
         const IMG_STORE = "croppedImages";
+        const META_STORE = "archiveMeta"; // 동적으로 추가된 회차 목록 및 사용자 추가 문항 저장
 
         function openArchiveDB() {
             return new Promise((resolve, reject) => {
@@ -3176,10 +3278,59 @@
                     if (!db.objectStoreNames.contains(IMG_STORE)) {
                         db.createObjectStore(IMG_STORE);
                     }
+                    if (!db.objectStoreNames.contains(META_STORE)) {
+                        db.createObjectStore(META_STORE);
+                    }
                 };
                 request.onsuccess = (e) => resolve(e.target.result);
                 request.onerror = (e) => reject(e.target.error);
             });
+        }
+
+        async function saveMetaToDB(key, val) {
+            try {
+                const db = await openArchiveDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(META_STORE, "readwrite");
+                    tx.objectStore(META_STORE).put(val, key);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = (e) => reject(e.target.error);
+                });
+            } catch (e) {
+                console.warn("메타데이터 저장 실패:", e);
+            }
+        }
+
+        async function loadMetaFromDB(key) {
+            try {
+                const db = await openArchiveDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(META_STORE, "readonly");
+                    const req = tx.objectStore(META_STORE).get(key);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function deleteSinglePdfFromDB(stdFileName) {
+            try {
+                const db = await openArchiveDB();
+                await new Promise((resolve) => {
+                    const tx = db.transaction(PDF_STORE, "readwrite");
+                    tx.objectStore(PDF_STORE).delete(stdFileName);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve();
+                });
+                delete loadedPdfDocs[stdFileName];
+                Object.keys(renderedCropCache).forEach(k => delete renderedCropCache[k]);
+                updatePdfStatusBadge();
+                renderQuestionViewer();
+            } catch (e) {
+                console.warn("단일 PDF 삭제 실패:", e);
+            }
         }
 
         async function savePdfToDB(fileName, arrayBuffer) {
@@ -3192,57 +3343,48 @@
                     tx.onerror = (e) => reject(e.target.error);
                 });
             } catch (e) {
-                console.warn("IndexedDB 저장 실패:", e);
+                console.warn("IndexedDB PDF 저장 실패:", e);
             }
         }
 
         async function loadAllPdfsFromDB() {
             try {
                 const db = await openArchiveDB();
-                const tx = db.transaction(PDF_STORE, "readonly");
-                const store = tx.objectStore(PDF_STORE);
-                const keysReq = store.getAllKeys();
-
-                return new Promise((resolve) => {
-                    keysReq.onsuccess = async () => {
-                        const keys = keysReq.result || [];
-                        let count = 0;
+                const entries = await new Promise((resolve, reject) => {
+                    const tx = db.transaction(PDF_STORE, "readonly");
+                    const store = tx.objectStore(PDF_STORE);
+                    const req = store.getAllKeys();
+                    req.onsuccess = async () => {
+                        const keys = req.result || [];
+                        const resultList = [];
                         for (const key of keys) {
-                            const valReq = store.get(key);
-                            await new Promise((res) => {
-                                valReq.onsuccess = async () => {
-                                    if (valReq.result) {
-                                        try {
-                                            const pdfDoc = await pdfjsLib.getDocument({ data: valReq.result.slice(0) }).promise;
-                                            loadedPdfDocs[key] = pdfDoc;
-                                            count++;
-                                        } catch (err) {
-                                            console.warn("저장된 PDF 파싱 오류:", key, err);
-                                        }
-                                    }
-                                    res();
-                                };
-                                valReq.onerror = () => res();
+                            const buf = await new Promise((res) => {
+                                const r = store.get(key);
+                                r.onsuccess = () => res(r.result);
+                                r.onerror = () => res(null);
                             });
+                            if (buf) resultList.push({ key, buf });
                         }
-                        resolve(count);
+                        resolve(resultList);
                     };
-                    keysReq.onerror = () => resolve(0);
+                    req.onerror = () => resolve([]);
                 });
+
+                let count = 0;
+                for (const item of entries) {
+                    try {
+                        const stdKey = normalizePdfKey(item.key) || item.key;
+                        const pdfDoc = await pdfjsLib.getDocument({ data: item.buf.slice(0) }).promise;
+                        loadedPdfDocs[stdKey] = pdfDoc;
+                        count++;
+                    } catch (err) {
+                        console.warn("저장된 PDF 복원 오류:", item.key, err);
+                    }
+                }
+                return count;
             } catch (e) {
                 return 0;
             }
-        }
-
-        async function clearSavedPdfs() {
-            const db = await openArchiveDB();
-            const tx = db.transaction([PDF_STORE, IMG_STORE], "readwrite");
-            tx.objectStore(PDF_STORE).clear();
-            tx.objectStore(IMG_STORE).clear();
-            Object.keys(loadedPdfDocs).forEach(k => delete loadedPdfDocs[k]);
-            Object.keys(renderedCropCache).forEach(k => delete renderedCropCache[k]);
-            updatePdfStatusBadge();
-            renderQuestionViewer();
         }
 
         // 시험 회차명 -> 통일된 표준 PDF 파일명 매핑 (예: "2025학년도 1학년 3월.pdf")
@@ -3269,30 +3411,96 @@
             "2026학년도 2학년 10월.pdf": ["2026학년도 2학년 10월.pdf", "10월(2학년).pdf", "2026_2_10.pdf"]
         };
 
-        // 기존 구버전 키("3월(1학년).pdf")를 표준 파일명("2025학년도 1학년 3월.pdf")으로 변환하는 헬퍼 함수
-        function normalizePdfKey(rawName) {
+        // 기존 구버전 키("3월(1학년).pdf")나 새로운 연도의 파일명("2027학년도 1학년 3월.pdf" 등)을 모두 표준 파일명과 시험 회차명으로 자동 파싱
+        function parseExamAndStdFilename(rawName) {
             if (!rawName) return null;
             const clean = rawName.replace(/\s+/g, "");
+
+            // 1) 기존 등록된 별칭(Alias) 먼저 확인
             for (const [stdName, aliases] of Object.entries(pdfAliasMap)) {
                 for (const alias of aliases) {
                     const cleanAlias = alias.replace(".pdf", "").replace(/\s+/g, "");
                     if (clean.includes(cleanAlias)) {
-                        return stdName;
-                    }
-                }
-                // "2025학년도 1학년 3월" 또는 "1학년 3월" 또는 "고1 3월" 패턴 자동 인식
-                const yearMatch = stdName.match(/(\d{4})학년도\s*(\d)학년\s*(\d+)월/);
-                if (yearMatch) {
-                    const [, yr, gr, mo] = yearMatch;
-                    if (
-                        (clean.includes(`${gr}학년`) || clean.includes(`고${gr}`)) &&
-                        clean.includes(`${mo}월`)
-                    ) {
-                        return stdName;
+                        const examTitle = Object.keys(examToPdfFilename).find(k => examToPdfFilename[k] === stdName) || stdName.replace(".pdf", "");
+                        return { examTitle, stdFileName: stdName };
                     }
                 }
             }
-            return rawName;
+
+            // 2) 신규 회차 파일명 패턴 자동 파싱 (예: "2026학년도 1학년 3월.pdf", "2027년 고2 6월.pdf" 등)
+            const fullMatch = rawName.match(/(20\d{2})\s*(?:학년도|년)?[\s_.-]*(?:고|고등학교)?\s*([1-3])\s*(?:학년)?[\s_.-]*(\d{1,2})\s*월/);
+            if (fullMatch) {
+                const [, yr, gr, mo] = fullMatch;
+                const examTitle = `${yr}학년도 ${mo}월 고${gr}`;
+                const stdFileName = `${yr}학년도 ${gr}학년 ${mo}월.pdf`;
+                return { examTitle, stdFileName };
+            }
+
+            // 3) "2026학년도 3월 고1.pdf"처럼 순서가 다른 패턴도 자동 인식
+            const revMatch = rawName.match(/(20\d{2})\s*(?:학년도|년)?[\s_.-]*(\d{1,2})\s*월[\s_.-]*(?:고|고등학교)?\s*([1-3])\s*(?:학년)?/);
+            if (revMatch) {
+                const [, yr, mo, gr] = revMatch;
+                const examTitle = `${yr}학년도 ${mo}월 고${gr}`;
+                const stdFileName = `${yr}학년도 ${gr}학년 ${mo}월.pdf`;
+                return { examTitle, stdFileName };
+            }
+
+            // 4) 구버전 단축형 "3월(1학년).pdf" 패턴
+            const shortMatch = clean.match(/(\d{1,2})월\(([1-3])학년\)/);
+            if (shortMatch) {
+                const [, mo, gr] = shortMatch;
+                const defaultYr = gr === "1" ? "2025" : "2026";
+                const examTitle = `${defaultYr}학년도 ${mo}월 고${gr}`;
+                const stdFileName = `${defaultYr}학년도 ${gr}학년 ${mo}월.pdf`;
+                return { examTitle, stdFileName };
+            }
+
+            // 5) 그 외 임의의 PDF 파일명도 그대로 등록 허용 (무제한 확장)
+            const baseName = rawName.replace(/\.pdf$/i, "").trim();
+            const stdFileName = baseName + ".pdf";
+            return { examTitle: baseName, stdFileName };
+        }
+
+        function normalizePdfKey(rawName) {
+            const parsed = parseExamAndStdFilename(rawName);
+            if (!parsed) return rawName;
+            if (!examToPdfFilename[parsed.examTitle]) {
+                examToPdfFilename[parsed.examTitle] = parsed.stdFileName;
+                syncExamSelectOptions();
+                saveMetaToDB("customExamMap", examToPdfFilename);
+            }
+            return parsed.stdFileName;
+        }
+
+        // 상단 '시험 회차' 필터 드롭다운과 문항 추가 모달의 회차 목록을 동적으로 동기화
+        function syncExamSelectOptions() {
+            const examSelect = document.getElementById("examSelect");
+            if (examSelect) {
+                const prevVal = examSelect.value || "all";
+                const allExams = Object.keys(examToPdfFilename);
+                examSelect.innerHTML = `<option value="all">모든 회차 보기 (${allExams.length}개 회차)</option>` +
+                    allExams.map(ex => `<option value="${ex}">${ex}</option>`).join("");
+                if (allExams.includes(prevVal) || prevVal === "all") {
+                    examSelect.value = prevVal;
+                }
+            }
+            const nqExam = document.getElementById("nqExam");
+            if (nqExam) {
+                nqExam.innerHTML = Object.entries(examToPdfFilename).map(([ex, file]) =>
+                    `<option value="${ex}">${ex} (${file})</option>`
+                ).join("");
+            }
+        }
+
+        async function clearSavedPdfs() {
+            const db = await openArchiveDB();
+            const tx = db.transaction([PDF_STORE, IMG_STORE], "readwrite");
+            tx.objectStore(PDF_STORE).clear();
+            tx.objectStore(IMG_STORE).clear();
+            Object.keys(loadedPdfDocs).forEach(k => delete loadedPdfDocs[k]);
+            Object.keys(renderedCropCache).forEach(k => delete renderedCropCache[k]);
+            updatePdfStatusBadge();
+            renderQuestionViewer();
         }
 
         // 각 문항별 원본 PDF 내 정확한 위치 좌표 (file: 통일된 표준 파일명)
@@ -3417,7 +3625,27 @@
 
         // 1순위: IndexedDB 영구 저장소 확인 -> 2순위: 동일 폴더(GitHub/Vercel 서버) PDF 자동 fetch
         async function tryAutoLoadPdfs() {
-            // 1) 브라우저 영구 저장소(IndexedDB)에서 먼저 자동 복원 (구버전 키도 표준 파일명으로 자동 매핑)
+            // 0) 사용자가 이전에 추가한 커스텀 회차 목록 및 커스텀 문항 복원
+            const savedExamMap = await loadMetaFromDB("customExamMap");
+            if (savedExamMap && typeof savedExamMap === "object") {
+                Object.assign(examToPdfFilename, savedExamMap);
+            }
+            const savedCustomQuestions = await loadMetaFromDB("customQuestions");
+            if (Array.isArray(savedCustomQuestions)) {
+                for (const cq of savedCustomQuestions) {
+                    if (!questionsData.some(q => q.id === cq.id)) {
+                        questionsData.push(cq);
+                    }
+                    if (cq.cropCoord) {
+                        pdfCropCoordinates[cq.id] = cq.cropCoord;
+                    }
+                }
+            }
+            syncExamSelectOptions();
+            updateUnitCounts();
+            renderQuestionList();
+
+            // 1) 브라우저 영구 저장소(IndexedDB)에서 먼저 자동 복원 (구버전 키나 신규 회차 키 모두 자동 매핑)
             const dbLoadedCount = await loadAllPdfsFromDB();
             for (const key of Object.keys(loadedPdfDocs)) {
                 const stdKey = normalizePdfKey(key);
@@ -3459,24 +3687,25 @@
                     }
                 }
             }
+            updatePdfStatusBadge();
             if (serverLoadedCount > 0) {
-                updatePdfStatusBadge();
                 renderQuestionViewer();
             }
         }
 
         function updatePdfStatusBadge() {
-            const stdKeys = Object.values(examToPdfFilename);
+            const stdKeys = [...new Set(Object.values(examToPdfFilename))];
             const loadedCount = stdKeys.filter(k => !!loadedPdfDocs[k]).length;
+            const totalSlots = stdKeys.length;
             const statusEl = document.getElementById("pdfStatusText");
             const exportBtn = document.getElementById("exportAllCropsBtn");
+            statusEl.textContent = `저장된 PDF: ${loadedCount}개 (전체 ${totalSlots}회차)`;
             if (loadedCount > 0) {
-                statusEl.textContent = `저장된 PDF: ${loadedCount} / 8개`;
                 if (exportBtn) exportBtn.classList.remove("hidden");
             } else {
-                statusEl.textContent = "저장된 PDF: 0 / 8개";
                 if (exportBtn) exportBtn.classList.add("hidden");
             }
+            syncExamSelectOptions();
             renderPdfSlotList();
         }
 
@@ -3496,33 +3725,57 @@
 
             slotContainer.innerHTML = Object.entries(examToPdfFilename).map(([examTitle, stdFileName]) => {
                 const isLoaded = !!loadedPdfDocs[stdFileName];
+                const qCount = questionsData.filter(q => q.exam === examTitle).length;
                 return `
                     <div class="px-4 py-2.5 bg-white hover:bg-slate-50 flex items-center justify-between gap-2 text-xs">
                         <div class="flex items-center gap-2.5">
                             <span class="w-2.5 h-2.5 rounded-full ${isLoaded ? 'bg-emerald-500' : 'bg-slate-300'}"></span>
                             <div>
                                 <div class="font-bold text-slate-800">${stdFileName}</div>
-                                <div class="text-[11px] text-slate-400">시험 회차: ${examTitle}</div>
+                                <div class="text-[11px] text-slate-400">시험 회차: ${examTitle} · 등록 문항: ${qCount}문항</div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isLoaded ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
                                 ${isLoaded ? '영구 저장됨' : '미등록'}
                             </span>
                             <label class="cursor-pointer px-2.5 py-1 rounded border text-[11px] font-bold transition ${isLoaded ? 'border-slate-300 bg-white hover:bg-slate-100 text-slate-700' : 'border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-900'}">
                                 <i class="fa-solid ${isLoaded ? 'fa-rotate' : 'fa-plus'} mr-1"></i>${isLoaded ? '갱신' : '추가'}
-                                <input type="file" accept="application/pdf" class="hidden" onchange="handleSingleSlotUpload('${stdFileName}', this.files[0])">
+                                <input type="file" accept="application/pdf" class="hidden" onchange="handleSingleSlotUpload('${stdFileName}', this.files[0], '${examTitle}')">
                             </label>
+                            ${isLoaded ? `
+                                <button type="button" onclick="deleteSinglePdfFromDB('${stdFileName}')" class="px-2 py-1 rounded border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-bold transition" title="이 PDF만 저장소에서 삭제">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                 `;
             }).join("");
         }
 
+        // 모달 상단에서 연도·학년·월을 선택해 새 모의고사 회차 PDF를 직접 생성·업로드
+        async function handleCreateNewSlotUpload(file) {
+            if (!file) return;
+            const yr = document.getElementById("newSlotYear").value.trim() || "2026";
+            const gr = document.getElementById("newSlotGrade").value;
+            const mo = document.getElementById("newSlotMonth").value;
+            const examTitle = `${yr}학년도 ${mo}월 고${gr}`;
+            const stdFileName = `${yr}학년도 ${gr}학년 ${mo}월.pdf`;
+
+            examToPdfFilename[examTitle] = stdFileName;
+            await saveMetaToDB("customExamMap", examToPdfFilename);
+            await handleSingleSlotUpload(stdFileName, file, examTitle);
+        }
+
         // 특정 회차 슬롯에 직접 PDF를 지정하여 추가/갱신할 때 (파일명과 무관하게 해당 표준 명칭으로 강제 매핑)
-        async function handleSingleSlotUpload(stdFileName, file) {
+        async function handleSingleSlotUpload(stdFileName, file, examTitle) {
             if (!file) return;
             try {
+                if (examTitle && !examToPdfFilename[examTitle]) {
+                    examToPdfFilename[examTitle] = stdFileName;
+                    await saveMetaToDB("customExamMap", examToPdfFilename);
+                }
                 const arrayBuffer = await file.arrayBuffer();
                 await savePdfToDB(stdFileName, arrayBuffer.slice(0));
                 const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -3533,6 +3786,75 @@
             } catch (err) {
                 console.error("단일 PDF 슬롯 업로드 오류:", err);
             }
+        }
+
+        // 신규 기출 문항 추가 모달 제어 및 저장 함수
+        function openAddQuestionModal() {
+            syncExamSelectOptions();
+            document.getElementById("addQuestionModal").classList.remove("hidden");
+        }
+
+        function closeAddQuestionModal() {
+            document.getElementById("addQuestionModal").classList.add("hidden");
+        }
+
+        async function handleAddNewQuestion(e) {
+            e.preventDefault();
+            const exam = document.getElementById("nqExam").value;
+            const unitCode = document.getElementById("nqUnit").value;
+            const unitNameMap = {
+                "1단원": "1단원. 인간, 사회, 환경과 행복",
+                "3단원": "3단원. 자연환경과 인간",
+                "6단원": "6단원. 문화 지역과 문화 변동",
+                "7단원": "7단원. 글로벌 교류와 지역 변화"
+            };
+            const rawNum = document.getElementById("nqNumber").value.trim();
+            const number = rawNum.endsWith("번") ? rawNum : `${rawNum}번`;
+            const points = document.getElementById("nqPoints").value.trim() || "2점";
+            const answer = parseInt(document.getElementById("nqAnswer").value, 10);
+            const subUnit = document.getElementById("nqSubUnit").value.trim();
+            const topic = document.getElementById("nqTopic").value.trim();
+            const page = parseInt(document.getElementById("nqPage").value, 10) || 1;
+            const col = document.getElementById("nqCol").value;
+            const y1 = parseFloat(document.getElementById("nqY1").value) || 0.06;
+            const y2 = parseFloat(document.getElementById("nqY2").value) || 0.52;
+            const explanation = document.getElementById("nqExplanation").value.trim() || "해설이 등록되었습니다.";
+
+            const stdFile = examToPdfFilename[exam] || `${exam}.pdf`;
+            const newId = `custom-${Date.now()}`;
+            const cropCoord = { file: stdFile, page, col, y1, y2 };
+
+            const newQuestion = {
+                id: newId,
+                unitCode,
+                unitName: unitNameMap[unitCode] || unitCode,
+                subUnit,
+                exam,
+                number,
+                points,
+                pageRef: `${exam} 문제지 ${page}쪽 ${number}`,
+                topic,
+                stem: `${exam} ${number} (${topic})`,
+                boxContent: `<div class="text-xs text-slate-600">원본 캡처 이미지 탭에서 실제 시험지 이미지를 확인하세요. (${stdFile} ${page}쪽 ${col === 'L' ? '왼쪽' : '오른쪽'} 단)</div>`,
+                choices: ["① 1번", "② 2번", "③ 3번", "④ 4번", "⑤ 5번"],
+                answer,
+                explanation,
+                cropCoord
+            };
+
+            questionsData.push(newQuestion);
+            pdfCropCoordinates[newId] = cropCoord;
+
+            const savedCustomQuestions = (await loadMetaFromDB("customQuestions")) || [];
+            savedCustomQuestions.push(newQuestion);
+            await saveMetaToDB("customQuestions", savedCustomQuestions);
+
+            updateUnitCounts();
+            selectedQuestionId = newId;
+            renderQuestionList();
+            renderQuestionViewer();
+            closeAddQuestionModal();
+            document.getElementById("addQuestionForm").reset();
         }
 
         // 여러 PDF 파일을 한 번에 업로드했을 때 표준 파일명("2025학년도 1학년 3월.pdf" 등)으로 자동 매칭하여 저장

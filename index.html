@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>통합사회 모의고사 지리 파트 기출 뷰어</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-7xl mx-auto p-4 md:p-6">
+    <header class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">🗺️ 통합사회 모의고사 지리 파트 기출 뷰어</h1>
+        <p class="text-sm text-slate-500 mt-1">주제를 클릭하면 실제 기출문제 발문과 선지, 정답 및 해설을 확인할 수 있습니다.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <input id="searchInput" type="text" placeholder="키워드 검색 (예: 기후, 택리지, 도시화)" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <select id="unitFilter" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+          <option value="ALL">전체 단원</option>
+          <option value="1단원">1단원. 인간, 사회, 환경과 행복</option>
+          <option value="3단원">3단원. 자연환경과 인간</option>
+          <option value="6단원">6단원. 문화 지역과 문화 변동</option>
+          <option value="7단원">7단원. 글로벌 교류와 지역 변화</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- 왼쪽 문항 목록 -->
+      <div class="lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[75vh]">
+        <div class="p-4 bg-slate-100 border-b border-slate-200 font-semibold text-sm text-slate-700 flex justify-between">
+          <span>출제 문항 목록</span>
+          <span id="countBadge" class="text-blue-600"></span>
+        </div>
+        <div id="questionList" class="divide-y divide-slate-100 overflow-y-auto flex-1"></div>
+      </div>
+
+      <!-- 오른쪽 실제 문항 뷰어 -->
+      <div class="lg:col-span-7 bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]">
+        <div id="questionDetail" class="h-full flex flex-col justify-between">
+          <div class="text-center text-slate-400 my-auto py-20">
+            왼쪽 목록에서 문항 주제를 클릭해 주세요.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        id: 1,
+        unit: "1단원",
+        subUnit: "1-2. 행복한 삶을 실현하기 위한 조건",
+        exam: "2025학년도 6월 고1",
+        num: "18번",
+        topic: "이중환의 『택리지』에서 강조하는 거주지의 조건",
+        stem: "다음 자료의 (가), (나)에서 공통적으로 강조하는 행복 실현의 조건으로 적절한 것만을 <보기>에서 고른 것은? [2점]",
+        box: "(가) 이중환이 저술한 『택리지』에 의하면 사람이 잘살 수 있는 좋은 터는 지리(地理, 풍수적 명당)가 좋아야 한다. 그리고 생리(生利, 그 땅에서 생기는 이익, 풍부한 산물)와 인심(人心, 온순하고 순박)이 넉넉해야 하고, 산수(山水, 빼어난 경치)가 좋아야 한다.\n(나) 모든 사람은 자신과 가족의 행복 실현을 위해 적절한 생활 수준을 누려야 한다. 여기에는 쾌적한 자연환경뿐만 아니라 주택, 상수도 등의 기반 시설이 해당된다.",
+        bogi: "ㄱ. 인간다운 삶을 위한 주거 환경을 만들어야 한다.\nㄴ. 삶의 질을 높일 수 있는 자연환경이 갖추어져야 한다.\nㄷ. 개인의 행복과는 상관없는 공동체의 이익을 추구해야 한다.\nㄹ. 시민의 참여를 보장할 수 있는 민주적인 법과 제도가 마련되어야 한다.",
+        choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+        answer: 0,
+        explanation: "정답은 ①(ㄱ, ㄴ)입니다. (가)의 산수 및 지리 조건과 (나)의 쾌적한 자연환경·주택 및 상수도 기반 시설은 모두 인간다운 삶을 위한 주거 환경과 자연환경의 중요성을 강조합니다."
+      },
+      {
+        id: 2,
+        unit: "3단원",
+        subUnit: "3-1. 자연환경과 인간 생활",
+        exam: "2025학년도 6월 고1",
+        num: "6번",
+        topic: "제주도의 다양한 화산 지형과 주민 생활",
+        stem: "다음은 온라인 공유 게시판의 일부이다. 밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 있는 대로 고른 것은? [2.5점]",
+        box: "1) 제주도의 다양한 화산 지형과 주민 생활 조사하기\n- ㉠ 한라산, 성산 일출봉, 거문오름 용암 동굴계는 세계 자연 유산에 등재되었다.\n- ㉡ 자연 휴식년제: 훼손의 우려가 있는 지역을 지정하여 일정 기간 출입을 통제하는 제도\n2) 일러스트를 만들어 지도에 첨부하기\n- ㉢ 주상절리 / ㉣ 강한 바람에 대비한 돌담과 그물 지붕을 갖춘 전통 가옥",
+        bogi: "ㄱ. ㉠의 정상부에는 분화구에 물이 고인 호수가 있다.\nㄴ. ㉡은 생태계를 보존하기 위한 노력으로 볼 수 있다.\nㄷ. ㉢은 용암이 냉각 및 수축되는 과정에서 형성되었다.\nㄹ. ㉣은 주로 주변에서 얻기 쉬운 석회암을 이용하여 쌓았다.",
+        choices: ["① ㄱ, ㄷ", "② ㄴ, ㄹ", "③ ㄴ, ㄷ", "④ ㄱ, ㄴ, ㄷ", "⑤ ㄴ, ㄷ, ㄹ"],
+        answer: 3,
+        explanation: "정답은 ④(ㄱ, ㄴ, ㄷ)입니다. 한라산 정상에는 화구호인 백록담이 있고, 주상절리는 용암의 냉각·수축으로 형성됩니다. 제주도의 돌담은 석회암이 아닌 현무암을 주로 이용했습니다."
+      },
+      {
+        id: 3,
+        unit: "3단원",
+        subUnit: "3-1. 자연환경과 인간 생활",
+        exam: "2025학년도 9월 고1",
+        num: "3번",
+        topic: "노르웨이의 피오르와 모로코의 모래 언덕 지형 비교",
+        stem: "(가), (나)에 대한 옳은 설명만을 <보기>에서 고른 것은? [1.5점]",
+        box: "(가) 노르웨이의 피오르\n(나) 모로코의 모래 언덕",
+        bogi: "ㄱ. (가)는 카르스트 지형으로 관광 산업에 활용된다.\nㄴ. (나)에서는 강한 햇빛과 모래바람을 막기 위한 전통 의복을 볼 수 있다.\nㄷ. (가)는 (나)보다 수력 발전소 입지에 유리하다.\nㄹ. (가)는 바람의 퇴적, (나)는 빙하의 침식 작용으로 주로 형성되었다.",
+        choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+        answer: 2,
+        explanation: "정답은 ③(ㄴ, ㄷ)입니다. 피오르(가)는 빙하의 침식 작용으로 형성되었으며 강수량이 풍부하고 경사가 급해 수력 발전에 유리합니다. 모래 언덕(나)은 바람의 퇴적 작용으로 형성된 사막 지형입니다."
+      },
+      {
+        id: 4,
+        unit: "6단원",
+        subUnit: "6-1. 세계의 문화권과 문화 이해 태도",
+        exam: "2026학년도 10월 고2",
+        num: "18번",
+        topic: "문화권 간 경계 지역(점이 지대)과 샌안토니오의 언어 경관",
+        stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 고른 것은? [1.5점]",
+        box: "세계의 여러 문화권 간 경계 지역에서는 서로 인접한 지역의 특성이 함께 나타나는 지리적 범위인 (가)가 나타난다. A 문화권(앵글로아메리카)과 B 문화권(라틴아메리카)은 리오그란데강을 중심으로 구분된다. 샌안토니오에서는 상점 간판과 관공서 안내문이 영어와 에스파냐어로 함께 표기되어 있다.",
+        bogi: "ㄱ. (가)는 '점이 지대'이다.\nㄴ. 영어와 에스파냐어 병기는 발견에 의한 문화 변동의 사례이다.\nㄷ. A 문화권은 과거 북서 유럽의 영향을 받아 개신교 신자의 비중이 높다.\nㄹ. B 문화권에는 원주민인 마오리족의 독특한 문화가 이어지고 있다.",
+        choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+        answer: 1,
+        explanation: "정답은 ②(ㄱ, ㄷ)입니다. 두 문화권의 특성이 함께 나타나는 경계 지역은 '점이 지대'입니다. 마오리족은 뉴질랜드(오세아니아 문화권)의 원주민입니다."
+      },
+      {
+        id: 5,
+        unit: "7단원",
+        subUnit: "7-2. 세계화와 지역 변화",
+        exam: "2025학년도 10월 고1",
+        num: "21번",
+        topic: "다국적 기업의 공간적 분업과 개발도상국에 미치는 영향",
+        stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 있는 대로 고른 것은? [1.5점]",
+        box: "세계화로 인해 공간적 분업이 활발해지고 다국적 기업들이 성장하고 있다. 미국 본사에서 제품을 기획하고, 스위스 연구소에서 기술을 개발하며, 베트남 생산 공장에서 제품을 조립한다.",
+        bogi: "ㄱ. 개발도상국에 생산 공장이 들어서면 해당 지역에 '일자리 증가'가 나타날 수 있다.\nㄴ. 공간적 분업이 진행될수록 국제 교류의 시공간적 제약이 커진다.\nㄷ. 생산 공장은 본사보다 생산비 절감이 유리한 곳에 주로 입지한다.",
+        choices: ["① ㄱ", "② ㄴ", "③ ㄱ, ㄷ", "④ ㄴ, ㄷ", "⑤ ㄱ, ㄴ, ㄷ"],
+        answer: 2,
+        explanation: "정답은 ③(ㄱ, ㄷ)입니다. 교통·통신의 발달로 국제 교류의 시공간적 제약이 '작아지면서' 다국적 기업의 공간적 분업이 활발해졌습니다."
+      }
+    ];
+
+    let selectedId = null;
+
+    function renderList() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const unit = document.getElementById("unitFilter").value;
+      const listEl = document.getElementById("questionList");
+
+      const filtered = questions.filter(q => {
+        const matchUnit = unit === "ALL" || q.unit === unit;
+        const matchKey = q.topic.toLowerCase().includes(keyword) || q.exam.toLowerCase().includes(keyword) || q.subUnit.toLowerCase().includes(keyword);
+        return matchUnit && matchKey;
+      });
+
+      document.getElementById("countBadge").textContent = `총 ${filtered.length}문항`;
+      listEl.innerHTML = filtered.map(q => `
+        <button onclick="selectQuestion(${q.id})" class="w-full text-left p-4 hover:bg-blue-50 transition flex flex-col gap-1 ${selectedId === q.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''}">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-medium">${q.unit}</span>
+            <span class="text-slate-500">${q.exam} · ${q.num}</span>
+          </div>
+          <div class="font-semibold text-slate-800 text-sm mt-0.5">${q.topic}</div>
+          <div class="text-xs text-slate-400">${q.subUnit}</div>
+        </button>
+      `).join("");
+    }
+
+    function selectQuestion(id) {
+      selectedId = id;
+      renderList();
+      const q = questions.find(item => item.id === id);
+      const detailEl = document.getElementById("questionDetail");
+
+      detailEl.innerHTML = `
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 text-xs font-bold">${q.unit}</span>
+            <span class="text-xs text-slate-500 font-medium">${q.subUnit}</span>
+            <span class="ml-auto text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">${q.exam} ${q.num}</span>
+          </div>
+          <h2 class="text-lg font-bold text-slate-900 leading-snug mb-4">${q.stem}</h2>
+          <div class="bg-slate-50 border border-slate-300 rounded-lg p-4 text-sm leading-relaxed whitespace-pre-line mb-4 text-slate-800">${q.box}</div>
+          ${q.bogi ? `
+            <div class="border border-slate-300 rounded-lg p-4 mb-5 relative">
+              <span class="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-slate-600">&lt; 보 기 &gt;</span>
+              <div class="text-sm leading-relaxed whitespace-pre-line text-slate-800">${q.bogi}</div>
+            </div>
+          ` : ''}
+          <div class="space-y-2 mb-6" id="choicesBox">
+            ${q.choices.map((c, idx) => `
+              <button onclick="checkAnswer(${idx}, ${q.answer})" class="choice-btn w-full text-left px-4 py-2.5 rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-sm transition">
+                ${c}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+        <div id="explanationBox" class="hidden p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 leading-relaxed">
+          <div class="font-bold mb-1">💡 정답 및 해설</div>
+          <div>${q.explanation}</div>
+        </div>
+      `;
+    }
+
+    function checkAnswer(chosen, correct) {
+      const buttons = document.querySelectorAll(".choice-btn");
+      buttons.forEach((btn, idx) => {
+        btn.classList.remove("bg-red-50", "border-red-400", "text-red-700", "bg-emerald-50", "border-emerald-500", "text-emerald-800", "font-bold");
+        if (idx === correct) {
+          btn.classList.add("bg-emerald-50", "border-emerald-500", "text-emerald-800", "font-bold");
+        } else if (idx === chosen) {
+          btn.classList.add("bg-red-50", "border-red-400", "text-red-700");
+        }
+      });
+      document.getElementById("explanationBox").classList.remove("hidden");
+    }
+
+    document.getElementById("searchInput").addEventListener("input", renderList);
+    document.getElementById("unitFilter").addEventListener("change", renderList);
+    renderList();
+  </script>
+</body>
+</html>

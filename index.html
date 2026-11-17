@@ -1,203 +1,3374 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>통합사회 모의고사 지리 파트 기출 뷰어</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>통합사회 지리 기출문제 아카이브 (2025~2026)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #f8fafc;
+        }
+        .exam-box {
+            border: 1.5px solid #334155;
+            background-color: #ffffff;
+            position: relative;
+        }
+        .exam-header-tag {
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        .choice-btn {
+            transition: all 0.15s ease-in-out;
+        }
+        .choice-btn:hover {
+            background-color: #f1f5f9;
+        }
+        .choice-selected {
+            background-color: #eff6ff !important;
+            border-color: #3b82f6 !important;
+            color: #1d4ed8 !important;
+            font-weight: 600;
+        }
+        .choice-correct {
+            background-color: #f0fdf4 !important;
+            border-color: #22c55e !important;
+            color: #15803d !important;
+            font-weight: 700;
+        }
+        .choice-wrong {
+            background-color: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            color: #b91c1c !important;
+            text-decoration: line-through;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <div class="max-w-7xl mx-auto p-4 md:p-6">
-    <header class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900">🗺️ 통합사회 모의고사 지리 파트 기출 뷰어</h1>
-        <p class="text-sm text-slate-500 mt-1">주제를 클릭하면 실제 기출문제 발문과 선지, 정답 및 해설을 확인할 수 있습니다.</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <input id="searchInput" type="text" placeholder="키워드 검색 (예: 기후, 택리지, 도시화)" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <select id="unitFilter" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-          <option value="ALL">전체 단원</option>
-          <option value="1단원">1단원. 인간, 사회, 환경과 행복</option>
-          <option value="3단원">3단원. 자연환경과 인간</option>
-          <option value="6단원">6단원. 문화 지역과 문화 변동</option>
-          <option value="7단원">7단원. 글로벌 교류와 지역 변화</option>
-        </select>
-      </div>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-900 text-white px-6 py-4 shadow-md flex flex-wrap justify-between items-center z-10 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 text-white p-2 rounded-lg shadow-inner">
+                <i class="fa-solid fa-earth-asia text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg md:text-xl font-bold tracking-tight">통합사회 모의고사 지리 파트 아카이브</h1>
+                <p class="text-xs text-slate-400">2025학년도 고1 (3·6·9·10월) & 2026학년도 고2 (3·6·9·10월) 기출 선별</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3 mt-2 sm:mt-0">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" placeholder="단원, 키워드, 지역 검색..." 
+                    class="pl-9 pr-4 py-1.5 bg-slate-800 text-sm text-white rounded-lg border border-slate-700 focus:outline-none focus:border-blue-500 w-48 md:w-64 transition">
+            </div>
+            <button id="quizModeToggle" class="bg-blue-600 hover:bg-blue-500 text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center space-x-1.5 shadow">
+                <i class="fa-solid fa-pencil"></i>
+                <span>문제 풀이 모드: ON</span>
+            </button>
+        </div>
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- 왼쪽 문항 목록 -->
-      <div class="lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[75vh]">
-        <div class="p-4 bg-slate-100 border-b border-slate-200 font-semibold text-sm text-slate-700 flex justify-between">
-          <span>출제 문항 목록</span>
-          <span id="countBadge" class="text-blue-600"></span>
-        </div>
-        <div id="questionList" class="divide-y divide-slate-100 overflow-y-auto flex-1"></div>
-      </div>
-
-      <!-- 오른쪽 실제 문항 뷰어 -->
-      <div class="lg:col-span-7 bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]">
-        <div id="questionDetail" class="h-full flex flex-col justify-between">
-          <div class="text-center text-slate-400 my-auto py-20">
-            왼쪽 목록에서 문항 주제를 클릭해 주세요.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const questions = [
-      {
-        id: 1,
-        unit: "1단원",
-        subUnit: "1-2. 행복한 삶을 실현하기 위한 조건",
-        exam: "2025학년도 6월 고1",
-        num: "18번",
-        topic: "이중환의 『택리지』에서 강조하는 거주지의 조건",
-        stem: "다음 자료의 (가), (나)에서 공통적으로 강조하는 행복 실현의 조건으로 적절한 것만을 <보기>에서 고른 것은? [2점]",
-        box: "(가) 이중환이 저술한 『택리지』에 의하면 사람이 잘살 수 있는 좋은 터는 지리(地理, 풍수적 명당)가 좋아야 한다. 그리고 생리(生利, 그 땅에서 생기는 이익, 풍부한 산물)와 인심(人心, 온순하고 순박)이 넉넉해야 하고, 산수(山水, 빼어난 경치)가 좋아야 한다.\n(나) 모든 사람은 자신과 가족의 행복 실현을 위해 적절한 생활 수준을 누려야 한다. 여기에는 쾌적한 자연환경뿐만 아니라 주택, 상수도 등의 기반 시설이 해당된다.",
-        bogi: "ㄱ. 인간다운 삶을 위한 주거 환경을 만들어야 한다.\nㄴ. 삶의 질을 높일 수 있는 자연환경이 갖추어져야 한다.\nㄷ. 개인의 행복과는 상관없는 공동체의 이익을 추구해야 한다.\nㄹ. 시민의 참여를 보장할 수 있는 민주적인 법과 제도가 마련되어야 한다.",
-        choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
-        answer: 0,
-        explanation: "정답은 ①(ㄱ, ㄴ)입니다. (가)의 산수 및 지리 조건과 (나)의 쾌적한 자연환경·주택 및 상수도 기반 시설은 모두 인간다운 삶을 위한 주거 환경과 자연환경의 중요성을 강조합니다."
-      },
-      {
-        id: 2,
-        unit: "3단원",
-        subUnit: "3-1. 자연환경과 인간 생활",
-        exam: "2025학년도 6월 고1",
-        num: "6번",
-        topic: "제주도의 다양한 화산 지형과 주민 생활",
-        stem: "다음은 온라인 공유 게시판의 일부이다. 밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 있는 대로 고른 것은? [2.5점]",
-        box: "1) 제주도의 다양한 화산 지형과 주민 생활 조사하기\n- ㉠ 한라산, 성산 일출봉, 거문오름 용암 동굴계는 세계 자연 유산에 등재되었다.\n- ㉡ 자연 휴식년제: 훼손의 우려가 있는 지역을 지정하여 일정 기간 출입을 통제하는 제도\n2) 일러스트를 만들어 지도에 첨부하기\n- ㉢ 주상절리 / ㉣ 강한 바람에 대비한 돌담과 그물 지붕을 갖춘 전통 가옥",
-        bogi: "ㄱ. ㉠의 정상부에는 분화구에 물이 고인 호수가 있다.\nㄴ. ㉡은 생태계를 보존하기 위한 노력으로 볼 수 있다.\nㄷ. ㉢은 용암이 냉각 및 수축되는 과정에서 형성되었다.\nㄹ. ㉣은 주로 주변에서 얻기 쉬운 석회암을 이용하여 쌓았다.",
-        choices: ["① ㄱ, ㄷ", "② ㄴ, ㄹ", "③ ㄴ, ㄷ", "④ ㄱ, ㄴ, ㄷ", "⑤ ㄴ, ㄷ, ㄹ"],
-        answer: 3,
-        explanation: "정답은 ④(ㄱ, ㄴ, ㄷ)입니다. 한라산 정상에는 화구호인 백록담이 있고, 주상절리는 용암의 냉각·수축으로 형성됩니다. 제주도의 돌담은 석회암이 아닌 현무암을 주로 이용했습니다."
-      },
-      {
-        id: 3,
-        unit: "3단원",
-        subUnit: "3-1. 자연환경과 인간 생활",
-        exam: "2025학년도 9월 고1",
-        num: "3번",
-        topic: "노르웨이의 피오르와 모로코의 모래 언덕 지형 비교",
-        stem: "(가), (나)에 대한 옳은 설명만을 <보기>에서 고른 것은? [1.5점]",
-        box: "(가) 노르웨이의 피오르\n(나) 모로코의 모래 언덕",
-        bogi: "ㄱ. (가)는 카르스트 지형으로 관광 산업에 활용된다.\nㄴ. (나)에서는 강한 햇빛과 모래바람을 막기 위한 전통 의복을 볼 수 있다.\nㄷ. (가)는 (나)보다 수력 발전소 입지에 유리하다.\nㄹ. (가)는 바람의 퇴적, (나)는 빙하의 침식 작용으로 주로 형성되었다.",
-        choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
-        answer: 2,
-        explanation: "정답은 ③(ㄴ, ㄷ)입니다. 피오르(가)는 빙하의 침식 작용으로 형성되었으며 강수량이 풍부하고 경사가 급해 수력 발전에 유리합니다. 모래 언덕(나)은 바람의 퇴적 작용으로 형성된 사막 지형입니다."
-      },
-      {
-        id: 4,
-        unit: "6단원",
-        subUnit: "6-1. 세계의 문화권과 문화 이해 태도",
-        exam: "2026학년도 10월 고2",
-        num: "18번",
-        topic: "문화권 간 경계 지역(점이 지대)과 샌안토니오의 언어 경관",
-        stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 고른 것은? [1.5점]",
-        box: "세계의 여러 문화권 간 경계 지역에서는 서로 인접한 지역의 특성이 함께 나타나는 지리적 범위인 (가)가 나타난다. A 문화권(앵글로아메리카)과 B 문화권(라틴아메리카)은 리오그란데강을 중심으로 구분된다. 샌안토니오에서는 상점 간판과 관공서 안내문이 영어와 에스파냐어로 함께 표기되어 있다.",
-        bogi: "ㄱ. (가)는 '점이 지대'이다.\nㄴ. 영어와 에스파냐어 병기는 발견에 의한 문화 변동의 사례이다.\nㄷ. A 문화권은 과거 북서 유럽의 영향을 받아 개신교 신자의 비중이 높다.\nㄹ. B 문화권에는 원주민인 마오리족의 독특한 문화가 이어지고 있다.",
-        choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
-        answer: 1,
-        explanation: "정답은 ②(ㄱ, ㄷ)입니다. 두 문화권의 특성이 함께 나타나는 경계 지역은 '점이 지대'입니다. 마오리족은 뉴질랜드(오세아니아 문화권)의 원주민입니다."
-      },
-      {
-        id: 5,
-        unit: "7단원",
-        subUnit: "7-2. 세계화와 지역 변화",
-        exam: "2025학년도 10월 고1",
-        num: "21번",
-        topic: "다국적 기업의 공간적 분업과 개발도상국에 미치는 영향",
-        stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 있는 대로 고른 것은? [1.5점]",
-        box: "세계화로 인해 공간적 분업이 활발해지고 다국적 기업들이 성장하고 있다. 미국 본사에서 제품을 기획하고, 스위스 연구소에서 기술을 개발하며, 베트남 생산 공장에서 제품을 조립한다.",
-        bogi: "ㄱ. 개발도상국에 생산 공장이 들어서면 해당 지역에 '일자리 증가'가 나타날 수 있다.\nㄴ. 공간적 분업이 진행될수록 국제 교류의 시공간적 제약이 커진다.\nㄷ. 생산 공장은 본사보다 생산비 절감이 유리한 곳에 주로 입지한다.",
-        choices: ["① ㄱ", "② ㄴ", "③ ㄱ, ㄷ", "④ ㄴ, ㄷ", "⑤ ㄱ, ㄴ, ㄷ"],
-        answer: 2,
-        explanation: "정답은 ③(ㄱ, ㄷ)입니다. 교통·통신의 발달로 국제 교류의 시공간적 제약이 '작아지면서' 다국적 기업의 공간적 분업이 활발해졌습니다."
-      }
-    ];
-
-    let selectedId = null;
-
-    function renderList() {
-      const keyword = document.getElementById("searchInput").value.toLowerCase();
-      const unit = document.getElementById("unitFilter").value;
-      const listEl = document.getElementById("questionList");
-
-      const filtered = questions.filter(q => {
-        const matchUnit = unit === "ALL" || q.unit === unit;
-        const matchKey = q.topic.toLowerCase().includes(keyword) || q.exam.toLowerCase().includes(keyword) || q.subUnit.toLowerCase().includes(keyword);
-        return matchUnit && matchKey;
-      });
-
-      document.getElementById("countBadge").textContent = `총 ${filtered.length}문항`;
-      listEl.innerHTML = filtered.map(q => `
-        <button onclick="selectQuestion(${q.id})" class="w-full text-left p-4 hover:bg-blue-50 transition flex flex-col gap-1 ${selectedId === q.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''}">
-          <div class="flex items-center gap-2 text-xs">
-            <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-medium">${q.unit}</span>
-            <span class="text-slate-500">${q.exam} · ${q.num}</span>
-          </div>
-          <div class="font-semibold text-slate-800 text-sm mt-0.5">${q.topic}</div>
-          <div class="text-xs text-slate-400">${q.subUnit}</div>
-        </button>
-      `).join("");
-    }
-
-    function selectQuestion(id) {
-      selectedId = id;
-      renderList();
-      const q = questions.find(item => item.id === id);
-      const detailEl = document.getElementById("questionDetail");
-
-      detailEl.innerHTML = `
-        <div>
-          <div class="flex flex-wrap items-center gap-2 mb-3">
-            <span class="px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 text-xs font-bold">${q.unit}</span>
-            <span class="text-xs text-slate-500 font-medium">${q.subUnit}</span>
-            <span class="ml-auto text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">${q.exam} ${q.num}</span>
-          </div>
-          <h2 class="text-lg font-bold text-slate-900 leading-snug mb-4">${q.stem}</h2>
-          <div class="bg-slate-50 border border-slate-300 rounded-lg p-4 text-sm leading-relaxed whitespace-pre-line mb-4 text-slate-800">${q.box}</div>
-          ${q.bogi ? `
-            <div class="border border-slate-300 rounded-lg p-4 mb-5 relative">
-              <span class="absolute -top-2.5 left-4 bg-white px-2 text-xs font-bold text-slate-600">&lt; 보 기 &gt;</span>
-              <div class="text-sm leading-relaxed whitespace-pre-line text-slate-800">${q.bogi}</div>
+    <!-- KPI & Filter Bar -->
+    <section class="bg-white border-b border-slate-200 px-6 py-3 shrink-0">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <!-- Unit Filter Tabs -->
+            <div class="flex flex-wrap items-center gap-1.5" id="unitTabs">
+                <button data-unit="all" class="unit-tab active px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white transition flex items-center space-x-1.5">
+                    <span>전체 문항</span>
+                    <span class="bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded text-[10px]" id="count-all">0</span>
+                </button>
+                <button data-unit="1단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>1단원 (행복/관점/택리지)</span>
+                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-1">0</span>
+                </button>
+                <button data-unit="3단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>3단원 (자연환경과 인간)</span>
+                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-3">0</span>
+                </button>
+                <button data-unit="6단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                    <span>6단원 (문화권과 문화 변동)</span>
+                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-6">0</span>
+                </button>
+                <button data-unit="7단원" class="unit-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span>7단원 (인구·도시·자원·세계화)</span>
+                    <span class="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" id="count-7">0</span>
+                </button>
             </div>
-          ` : ''}
-          <div class="space-y-2 mb-6" id="choicesBox">
-            ${q.choices.map((c, idx) => `
-              <button onclick="checkAnswer(${idx}, ${q.answer})" class="choice-btn w-full text-left px-4 py-2.5 rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-sm transition">
-                ${c}
-              </button>
-            `).join("")}
-          </div>
-        </div>
-        <div id="explanationBox" class="hidden p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 leading-relaxed">
-          <div class="font-bold mb-1">💡 정답 및 해설</div>
-          <div>${q.explanation}</div>
-        </div>
-      `;
-    }
 
-    function checkAnswer(chosen, correct) {
-      const buttons = document.querySelectorAll(".choice-btn");
-      buttons.forEach((btn, idx) => {
-        btn.classList.remove("bg-red-50", "border-red-400", "text-red-700", "bg-emerald-50", "border-emerald-500", "text-emerald-800", "font-bold");
-        if (idx === correct) {
-          btn.classList.add("bg-emerald-50", "border-emerald-500", "text-emerald-800", "font-bold");
-        } else if (idx === chosen) {
-          btn.classList.add("bg-red-50", "border-red-400", "text-red-700");
+            <!-- Exam Session Filter -->
+            <div class="flex items-center space-x-2">
+                <label for="examSelect" class="text-xs font-semibold text-slate-500">시험 회차:</label>
+                <select id="examSelect" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 font-medium focus:outline-none focus:border-blue-500">
+                    <option value="all">모든 회차 보기</option>
+                    <option value="2025학년도 3월 고1">2025학년도 3월 고1</option>
+                    <option value="2025학년도 6월 고1">2025학년도 6월 고1</option>
+                    <option value="2025학년도 9월 고1">2025학년도 9월 고1</option>
+                    <option value="2025학년도 10월 고1">2025학년도 10월 고1</option>
+                    <option value="2026학년도 3월 고2">2026학년도 3월 고2</option>
+                    <option value="2026학년도 6월 고2">2026학년도 6월 고2</option>
+                    <option value="2026학년도 9월 고2">2026학년도 9월 고2</option>
+                    <option value="2026학년도 10월 고2">2026학년도 10월 고2</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area (Split View) -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Question List Table -->
+        <div class="w-full md:w-5/12 lg:w-1/2 border-r border-slate-200 bg-white flex flex-col h-1/2 md:h-full">
+            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs font-semibold text-slate-500">
+                <span>문항 목록 (클릭하여 원본 형태 문제 보기)</span>
+                <span id="filteredCountText">총 0문항</span>
+            </div>
+            <div class="flex-1 overflow-y-auto divide-y divide-slate-100" id="questionListContainer">
+                <!-- Javascript will populate items here -->
+            </div>
+        </div>
+
+        <!-- Right Panel: Actual Question Viewer -->
+        <div class="w-full md:w-7/12 lg:w-1/2 bg-slate-100 flex flex-col h-1/2 md:h-full overflow-y-auto p-4 md:p-6" id="questionViewerContainer">
+            <!-- Javascript will populate the selected question here -->
+        </div>
+
+    </main>
+
+    <script>
+        // 데이터베이스: 업로드된 8개 회차 모의고사 PDF의 지리 파트 전체 기출문항 원문 및 시각 자료 재현 데이터
+        const questionsData = [
+            // ================= 1단원 =================
+            {
+                id: "25-06-1-01",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-1. 통합적 관점 (공간적 관점)",
+                exam: "2025학년도 6월 고1",
+                number: "1번",
+                points: "1.5점",
+                pageRef: "2025학년도 6월 고1 문제지 1쪽 1번",
+                topic: "공간적 관점을 중심으로 한 '플랜테이션 농업' 탐구",
+                stem: "다음은 온라인 게시판의 일부이다. 질문에 옳게 답한 학생만을 고른 것은?",
+                boxContent: `
+                    <div class="border border-slate-700 rounded-t bg-slate-200 px-3 py-1 flex justify-between items-center text-xs font-bold">
+                        <span>통합사회 학습방</span>
+                        <span class="font-mono text-[10px]">[ _ ] [ □ ] [ X ]</span>
+                    </div>
+                    <div class="p-3.5 bg-white border-x border-b border-slate-700 space-y-3 text-sm">
+                        <div>
+                            <span class="inline-block border border-slate-800 rounded px-2 py-0.5 text-xs font-bold mb-1">질문</span>
+                            <p class="leading-relaxed">공간적 관점은 위치와 분포, 이동과 네트워크를 중심으로 장소와 지역, 지리적 상호작용을 통해 사회현상을 살펴보는 것입니다. 공간적 관점을 중심으로 'A국의 플랜테이션 농업'에 대해 탐구한다면 어떤 내용을 조사해야 할까요?</p>
+                        </div>
+                        <div>
+                            <span class="inline-block border border-slate-800 rounded px-2 py-0.5 text-xs font-bold mb-1.5">답변</span>
+                            <div class="space-y-1.5">
+                                <div class="border border-slate-400 bg-slate-50 px-3 py-1.5"><strong>갑 :</strong> 플랜테이션 농산물의 품질 관리 제도와 정책을 조사합니다.</div>
+                                <div class="border border-slate-400 bg-slate-50 px-3 py-1.5"><strong>을 :</strong> 플랜테이션 농업에서 발생하는 이해 갈등의 바람직한 해결책을 조사합니다.</div>
+                                <div class="border border-slate-400 bg-slate-50 px-3 py-1.5"><strong>병 :</strong> 플랜테이션 농업이 지역의 지리적 조건에 따라 어떻게 분포하고 있는지 조사합니다.</div>
+                                <div class="border border-slate-400 bg-slate-50 px-3 py-1.5"><strong>정 :</strong> 플랜테이션 농업으로 생산된 작물이 생산지에서 소비지로 어떻게 이동하는지 조사합니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                choices: ["① 갑, 을", "② 갑, 병", "③ 을, 병", "④ 을, 정", "⑤ 병, 정"],
+                answer: 5,
+                explanation: "공간적 관점은 위치와 분포, 이동과 네트워크 등 공간적 맥락을 살펴보는 관점입니다. 병(지리적 조건에 따른 분포)과 정(생산지에서 소비지로의 이동)이 공간적 관점에 부합합니다. 갑은 사회적 관점, 을은 윤리적 관점입니다."
+            },
+            {
+                id: "25-06-1-18",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-2. 행복한 삶을 실현하기 위한 조건",
+                exam: "2025학년도 6월 고1",
+                number: "18번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 5쪽 18번",
+                topic: "『택리지』의 가거지 조건과 질 높은 정주 환경",
+                stem: "다음 자료의 (가), (나)에서 공통적으로 강조하는 행복 실현의 조건으로 적절한 것만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="space-y-2.5 text-sm leading-relaxed">
+                        <p><strong>(가)</strong> 이중환이 저술한 『택리지』에 의하면 사람이 잘살 수 있는 좋은 터는 지리(地理, 풍수적 명당)가 좋아야 한다. 그리고 생리(生利, 그 땅에서 생기는 이익, 풍부한 산물)와 인심(人心, 온순하고 순박)이 넉넉해야 하고, 산수(山水, 빼어난 경치)가 좋아야 한다.</p>
+                        <p><strong>(나)</strong> 모든 사람은 자신과 가족의 행복 실현을 위해 적절한 생활 수준을 누려야 한다. 여기에는 쾌적한 자연환경뿐만 아니라 주택, 상수도 등의 기반 시설이 해당된다.</p>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. 인간다운 삶을 위한 주거 환경을 만들어야 한다.<br>
+                    ㄴ. 삶의 질을 높일 수 있는 자연환경이 갖추어져야 한다.<br>
+                    ㄷ. 개인의 행복과는 상관없는 공동체의 이익을 추구해야 한다.<br>
+                    ㄹ. 시민의 참여를 보장할 수 있는 민주적인 법과 제도가 마련되어야 한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 1,
+                explanation: "(가)의 『택리지』와 (나)는 모두 행복한 삶을 위해 쾌적한 자연환경(산수 등)과 인간다운 삶을 위한 질 높은 정주(주거) 환경이 갖추어져야 함을 강조하고 있습니다."
+            },
+            {
+                id: "25-09-1-01",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-1. 통합적 관점 (공간적 관점)",
+                exam: "2025학년도 9월 고1",
+                number: "1번",
+                points: "2점",
+                pageRef: "2025학년도 9월 고1 문제지 1쪽 1번",
+                topic: "주사위 도면을 활용한 난민 문제의 통합적 관점 탐구",
+                stem: "다음 제작 방법에 따라 주사위를 만들고자 한다. A에 들어갈 수 있는 탐구 활동으로 적절한 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 mb-3 bg-slate-50 p-2.5 rounded border border-slate-300">
+                        <div class="font-bold">[제작 방법]</div>
+                        <div>○ 주사위 각 면에는 난민 문제에 대해 시간적, 공간적, 사회적, 윤리적 관점이 적용된 탐구 활동이 적힌다.</div>
+                        <div>○ A와 동일한 관점이 적용된 탐구 활동은 A와 접하는 면에 위치할 수 없으며, A의 반대편에 위치하는 것은 가능하다.</div>
+                    </div>
+                    <div class="font-bold text-xs mb-1.5">[주사위 도면]</div>
+                    <div class="text-xs grid grid-cols-4 gap-0 text-center font-medium max-w-md mx-auto">
+                        <div></div>
+                        <div class="border border-slate-700 p-2 bg-white">난민 수가 증가하는 역사적 배경 분석하기</div>
+                        <div></div>
+                        <div></div>
+                        <div class="border border-slate-700 p-2 bg-white">난민 수용 문제를 인간 존엄성 측면에서 판단하기</div>
+                        <div class="border-y border-r border-slate-700 p-2 bg-amber-50 font-bold text-slate-900 flex items-center justify-center text-base">A</div>
+                        <div class="border-y border-r border-slate-700 p-2 bg-white">난민 수용률이 높은 국가들의 지리적 특성 조사하기</div>
+                        <div class="border-y border-r border-slate-700 p-2 bg-white">난민 지위 보장을 위한 국제 협약 내용 찾아보기</div>
+                        <div></div>
+                        <div class="border-x border-b border-slate-700 p-2 bg-white">난민 수의 연도별 변화 추이 알아보기</div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                `,
+                choices: [
+                    "① 난민 수용을 위한 제도 및 정책 분석하기",
+                    "② 난민 문제를 시간의 흐름 속에서 이해하기",
+                    "③ 난민 발생 지역과 난민 이동 경로 파악하기",
+                    "④ 난민 문제 해결의 기준이 되는 도덕적 규범 탐색하기",
+                    "⑤ 난민 문제 해결을 위해 갖춰야 하는 바람직한 태도 탐구하기"
+                ],
+                answer: 1,
+                explanation: "주사위 전개도에서 A와 접하는 4개 면은 위(시간적), 아래(시간적), 왼쪽(윤리적), 오른쪽(공간적) 관점입니다. 마주 보는 반대편 면은 '난민 지위 보장을 위한 국제 협약 내용 찾아보기(사회적 관점)'이므로, A에는 접하는 면과 겹치지 않는 '사회적 관점(제도 및 정책 분석)'이 들어가야 합니다."
+            },
+            {
+                id: "25-09-1-14",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-2. 행복한 삶을 실현하기 위한 조건",
+                exam: "2025학년도 9월 고1",
+                number: "14번",
+                points: "1.5점",
+                pageRef: "2025학년도 9월 고1 문제지 4쪽 14번",
+                topic: "맹자의 항산항심(恒産恒心)과 『택리지』의 정주 환경 조건",
+                stem: "(가), (나)에 나타난 행복한 삶을 위한 조건에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="space-y-2.5 text-sm leading-relaxed">
+                        <p><strong>(가)</strong> 일반 백성은 고정적인 생업[恒産]이 없으면 흔들림 없는 도덕적인 마음[恒心]을 유지하기 어렵다. 그러므로 현명한 임금은 백성들이 생업을 가지게 해 주되 반드시 위로는 부모를 섬기기에 충분하게 하고, 아래로는 자녀를 먹여 살릴 만하게 하여 백성들을 바른 길로 나아가게 한다.</p>
+                        <p><strong>(나)</strong> 무릇 살 터를 잡는 데는 첫째, 지리(地理)가 좋아야 하고 다음은 생리(生利)가 좋아야 하며, 다음은 인심(人心)이 좋아야 하고, 아름다운 산과 물인 산수(山水)가 있어야 한다. 이 네 가지에서 하나라도 모자라면 살기 좋은 땅이 아니다.</p>
+                        <p class="text-xs text-slate-600">* 생리(生利): 지역에서 얻는 경제적 이익 / ** 인심(人心): 넉넉하고 좋은 이웃 간의 정(情)</p>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)를 통해 도덕적인 마음은 경제적 안정을 위한 우선 조건임을 알 수 있다.<br>
+                    ㄴ. (가)를 통해 인간다운 삶을 위해 일정한 수준의 소득이 필요함을 알 수 있다.<br>
+                    ㄷ. (나)를 통해 이웃과의 교류가 없는 조용한 곳을 거주지로 정해야 함을 알 수 있다.<br>
+                    ㄹ. (나)를 통해 질 높은 정주 환경을 위해 자연환경뿐만 아니라 인문 환경도 필요함을 알 수 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ. (가)는 생업(경제적 안정)이 도덕적 마음 유지의 바탕이 됨을 강조합니다. ㄹ. (나)의 『택리지』는 산수(자연환경)뿐만 아니라 생리, 인심 등 인문 환경도 질 높은 정주 환경을 위해 필요함을 보여줍니다."
+            },
+            {
+                id: "25-10-1-01",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-1. 통합적 관점 (공간적 관점)",
+                exam: "2025학년도 10월 고1",
+                number: "1번",
+                points: "1.5점",
+                pageRef: "2025학년도 10월 고1 문제지 1쪽 1번",
+                topic: "러시아-우크라이나 분쟁의 통합적 관점(공간적 원인 등) 탐구",
+                stem: "(가), (나)에 들어갈 적절한 내용만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="font-bold text-center mb-1 text-sm">&lt;통합사회 형성 평가&gt;</div>
+                    <div class="text-xs mb-2">[러시아와 우크라이나 간 분쟁에 대해 통합적 관점으로 살펴보기]<br>○ 문제: 탐구 주제에 맞는 자료를 찾아 그 제목을 각 답란에 1개씩만 쓰시오. (채점 결과: 4점 만점)</div>
+                    <table class="w-full text-xs border-collapse border border-slate-600">
+                        <tr class="bg-slate-100 font-bold text-center">
+                            <td class="border border-slate-600 p-1.5 w-28">탐구 주제</td>
+                            <td class="border border-slate-600 p-1.5">자료 제목</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1.5 text-center font-semibold">분쟁의 역사적 배경</td>
+                            <td class="border border-slate-600 p-1.5">러시아와 우크라이나 간 갈등을 보여 주는 주요 사건 연대표</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1.5 text-center font-semibold bg-amber-50">분쟁 발발의 공간적 원인</td>
+                            <td class="border border-slate-600 p-1.5 text-center font-bold bg-amber-50">(가)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1.5 text-center font-semibold">분쟁에 따른 경제적 영향</td>
+                            <td class="border border-slate-600 p-1.5 text-center font-bold">(나)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1.5 text-center font-semibold">분쟁이 초래한 윤리적 문제</td>
+                            <td class="border border-slate-600 p-1.5">러시아와 우크라이나의 포로들에 대한 비인격적 대우</td>
+                        </tr>
+                    </table>
+                `,
+                bogi: `
+                    ㄱ. 러시아와 우크라이나의 군인이 겪는 도덕적 딜레마 사례<br>
+                    ㄴ. 러시아와 우크라이나 출신 주민의 분쟁 지역 내 분포 비율<br>
+                    ㄷ. 러시아와 우크라이나 간 대립을 심화시킨 시대적 맥락 고찰<br>
+                    ㄹ. 러시아와 우크라이나 간 분쟁으로 인한 물가 상승 대응 정책
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "(가) '분쟁 발발의 공간적 원인'에는 지역 내 주민 분포 비율을 다루는 ㄴ이, (나) '분쟁에 따른 경제적 영향'에는 물가 상승 대응 정책을 다루는 ㄹ이 적절합니다."
+            },
+            {
+                id: "26-03-2-01",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-1. 통합적 관점 (공간적 관점)",
+                exam: "2026학년도 3월 고2",
+                number: "1번",
+                points: "2점",
+                pageRef: "2026학년도 3월 고2 문제지 1쪽 1번",
+                topic: "도시와 촌락의 격차 양상과 공간적 관점의 탐구 질문",
+                stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 mb-2">
+                        <div><strong>&lt;모둠 활동 주제&gt;</strong> 다양한 관점으로 우리나라의 <u>㉠ 사회 불평등 현상</u> 탐구하기</div>
+                        <div><strong>&lt;모둠 과제&gt;</strong> A, B 모둠: 원인·양상 파악 / C, D 모둠: 해결 방안 탐구</div>
+                    </div>
+                    <table class="w-full text-xs border-collapse border border-slate-600">
+                        <tr>
+                            <td class="border border-slate-600 p-1.5 font-bold text-center w-20 bg-slate-100">A 모둠</td>
+                            <td class="border border-slate-600 p-1.5">사회 불평등 현상이 심화된 시대적 배경은 무엇인가?</td>
+                        </tr>
+                        <tr class="bg-amber-50">
+                            <td class="border border-slate-600 p-1.5 font-bold text-center">B 모둠</td>
+                            <td class="border border-slate-600 p-1.5 font-semibold">도시와 촌락의 격차는 어떤 양상으로 나타나는가?</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1.5 font-bold text-center bg-slate-100">C 모둠</td>
+                            <td class="border border-slate-600 p-1.5">빈곤층에 대한 편견을 극복할 수 있는 도덕적 실천 방안은 무엇인가?</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1.5 font-bold text-center bg-slate-100">D 모둠</td>
+                            <td class="border border-slate-600 p-1.5"><u>㉡ 사회 보험</u>은 사회적 불평등을 완화할 수 있는가?</td>
+                        </tr>
+                    </table>
+                `,
+                bogi: `
+                    ㄱ. '사회적 약자는 어떤 법이나 제도를 통해서 보호받고 있는가?'는 C 모둠의 질문과 동일한 관점의 탐구 질문이다.<br>
+                    ㄴ. B 모둠의 질문은 공간적 관점, D 모둠의 질문은 사회적 관점의 탐구 질문에 해당한다.<br>
+                    ㄷ. ㉠은 부, 권력, 명예 등 사회적 희소가치가 차등적으로 분배되어 개인이나 집단이 서열화되는 현상이다.<br>
+                    ㄹ. ㉡의 대표적인 사례로는 국민 기초 생활 보장 제도가 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 3,
+                explanation: "ㄴ. 도시와 촌락의 지역 격차를 탐구하는 B 모둠은 공간적 관점, 제도의 역할을 탐구하는 D 모둠은 사회적 관점에 해당합니다. ㄷ. 사회 불평등의 정의로 옳습니다. (국민 기초 생활 보장 제도는 공공 부조입니다.)"
+            },
+            {
+                id: "26-03-2-08",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-2. 행복한 삶을 실현하기 위한 조건",
+                exam: "2026학년도 3월 고2",
+                number: "8번",
+                points: "1.5점",
+                pageRef: "2026학년도 3월 고2 문제지 2쪽 8번",
+                topic: "『택리지』의 가거지 조건(생리)과 민주주의 발전",
+                stem: "다음은 행복한 삶을 실현하기 위한 조건에 관한 글이다. 이에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="space-y-2 text-sm leading-relaxed">
+                        <p><strong>(가)</strong> 사람이 살 만한 곳을 정할 때, 첫째는 지리(地理), 둘째는 <u>㉠ 생리(生利)</u>, 셋째는 인심(人心), 넷째는 산수(山水)가 좋아야 한다. 이 네 가지에서 하나라도 모자라면 살기 좋은 땅이라 할 수 없다.</p>
+                        <p><strong>(나)</strong> 역사적으로 비참한 기근을 겪은 국가들의 사례를 분석해 보면 공통점이 있다. 의회에는 야당 세력이 없었고, 복수 정당제에 의한 선거가 치러지지 않았으며, <u>㉡ 언론의 자유</u>가 없었기 때문에 시민들이 잘못된 정책들을 비판할 수 없었다는 점이다.</p>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)는 행복한 삶의 실현을 위한 비물질적 요소를 간과하고 있다.<br>
+                    ㄴ. (나)는 행복한 삶의 실현을 위해 성숙한 민주주의 제도가 필요함을 제시하고 있다.<br>
+                    ㄷ. ㉠은 질 높은 정주 환경의 조건 중 경제적 요소에 해당한다.<br>
+                    ㄹ. ㉡은 사회권적 기본권에 해당한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 3,
+                explanation: "ㄴ. 성숙한 민주주의가 기근을 막고 행복한 삶을 실현하는 조건임을 제시합니다. ㄷ. 생리(生利)는 그 땅에서 생기는 경제적 이익으로 경제적 요소에 해당합니다."
+            },
+            {
+                id: "26-06-2-01",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-1. 통합적 관점 (공간적 관점)",
+                exam: "2026학년도 6월 고2",
+                number: "1번",
+                points: "1.5점",
+                pageRef: "2026학년도 6월 고2 문제지 1쪽 1번",
+                topic: "정보 격차 문제와 공간적 관점('정보 기반 시설의 지역별 현황 조사')",
+                stem: "밑줄 친 ㉠~㉤에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed">
+                        정보화가 우리 삶에 긍정적인 변화를 가져왔지만, <u>㉠ 정보 격차</u>가 심화되어 디지털 소외 계층이 일상생활에 어려움을 겪는 등의 문제점이 나타나고 있다. 이러한 현상을 다각적으로 이해하고, 문제점을 해결하기 위해서는 <u>㉡ 시간적 관점</u>, <u>㉢ 공간적 관점</u>, <u>㉣ 사회적 관점</u>, <u>㉤ 윤리적 관점</u>에서 통합적으로 살펴볼 필요가 있다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠은 소득 불평등으로 이어져 경제적·사회적 격차가 심화되는 요인이 되기도 한다.<br>
+                    ㄴ. ㉢에서 탐구한 사례로 '정보 기반 시설의 지역별 현황 조사'를 들 수 있다.<br>
+                    ㄷ. ㉤은 사회 구조나 사회 제도에 초점을 두고 사회현상을 파악하는 관점이다.<br>
+                    ㄹ. ㉡은 시대적 배경과 맥락에 초점을 두고 사회현상을 파악하는 관점이다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 1,
+                explanation: "ㄱ. 정보 격차는 경제적·사회적 격차 심화 요인입니다. ㄴ. '지역별 현황 조사'는 공간적 관점(㉢)의 대표적 탐구 사례입니다."
+            },
+            {
+                id: "26-09-2-01",
+                unitCode: "1단원",
+                unitName: "1단원. 인간, 사회, 환경과 행복",
+                subUnit: "1-1. 통합적 관점 (공간적 관점)",
+                exam: "2026학년도 9월 고2",
+                number: "1번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 1쪽 1번",
+                topic: "관광객 과잉 문제(오버투어리즘)의 통합적 관점 탐구",
+                stem: "다음 자료의 (가)에 들어갈 탐구 활동으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="font-bold text-center mb-2 text-sm">통합적 관점으로 관광객 과잉 문제 탐구하기</div>
+                    <div class="text-xs mb-2.5">○ 네 장의 탐구 카드에는 각각 시간적, 공간적, 사회적, 윤리적 관점 중 하나가 적용된 탐구 활동이 제시되어 있다.</div>
+                    <div class="grid grid-cols-4 gap-1.5 text-xs text-center">
+                        <div class="border border-slate-600 rounded p-2 bg-white">
+                            <div class="font-bold border-b pb-1 mb-1">관점 1 (사회)</div>
+                            <div>지방 자치 단체에서 시행하는 관광객 분산 정책 조사하기</div>
+                        </div>
+                        <div class="border border-slate-600 rounded p-2 bg-white">
+                            <div class="font-bold border-b pb-1 mb-1">관점 2 (윤리)</div>
+                            <div>지속가능한 관광 실현을 위해 추구해야 할 도덕적 가치 모색하기</div>
+                        </div>
+                        <div class="border border-slate-600 rounded p-2 bg-white">
+                            <div class="font-bold border-b pb-1 mb-1">관점 3 (시간)</div>
+                            <div>시기별 관광객 수에 따른 교통 혼잡도 변화 분석하기</div>
+                        </div>
+                        <div class="border-2 border-blue-600 rounded p-2 bg-blue-50">
+                            <div class="font-bold border-b border-blue-300 pb-1 mb-1 text-blue-800">관점 4 (공간)</div>
+                            <div class="font-bold text-blue-900 py-3">(가)</div>
+                        </div>
+                    </div>
+                `,
+                choices: [
+                    "① 관광지의 쓰레기 배출량 연도별 추이 파악하기",
+                    "② 코로나19 전후 관광객 과잉 문제 양상 비교하기",
+                    "③ 지역 주민의 주거권 보호를 위한 법률적 근거 조사하기",
+                    "④ 관광객 집중 방문 구역과 주민 통행 경로 비교 분석하기",
+                    "⑤ 지역 공동체를 존중하는 관광객의 바람직한 태도 탐구하기"
+                ],
+                answer: 4,
+                explanation: "관점 1은 사회적, 관점 2는 윤리적, 관점 3은 시간적 관점이므로 관점 4인 (가)에는 '공간적 관점'이 들어가야 합니다. 관광객 집중 구역과 주민 통행 경로를 공간적으로 비교 분석하는 ④가 적절합니다."
+            },
+
+            // ================= 3단원 =================
+            {
+                id: "25-03-1-09",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-2. 자연재해와 인간 생활",
+                exam: "2025학년도 3월 고1",
+                number: "9번",
+                points: "2점",
+                pageRef: "2025학년도 3월 고1 문제지 2쪽 9번",
+                topic: "자연재해 자음·모음 십자말풀이 (열대성저기압, 폭설, 홍수, 지진)",
+                stem: "다음 자료의 (가)에 들어갈 내용으로 옳은 것은?",
+                boxContent: `
+                    <div class="font-bold text-center mb-2">&lt;자연재해 자음·모음 십자말풀이&gt;</div>
+                    <div class="text-xs bg-slate-50 p-3 rounded border border-slate-300 space-y-2">
+                        <div class="font-mono text-center bg-white p-2 border border-slate-300 rounded">
+                            [가로1] ㅇ ㅕ ㄹ ㄷ ㅐ ㅅ ㅓ ㅇ [ㅈ] ㅓ ㄱ ㅣ ㅇ ㅏ ㅂ (열대성저기압)<br>
+                            [세로3] ㅍ ㅗ ㄱ ㅅ ㅓ ㄹ (폭설) &nbsp;|&nbsp; [세로4] ㅎ ㅗ ㅇ ㅅ [ㅜ] (홍수)<br>
+                            [가로2] <strong>[ㅈ] [ㅣ] [ㅈ] [ㅣ] [ㄴ] → 지진</strong>
+                        </div>
+                        <div><strong>[가로 열쇠]</strong><br>1. 열대 지역에서 발생하여 중위도 지역으로 이동하는 저기압<br>2. <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(가)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></div>
+                        <div><strong>[세로 열쇠]</strong><br>3. 짧은 기간 동안 많은 양의 눈이 내리는 현상<br>4. 집중 호우 등으로 하천이 범람하여 가옥이나 농경지가 물에 잠기는 현상</div>
+                    </div>
+                `,
+                choices: [
+                    "① 매우 심한 더위가 나타나는 현상",
+                    "② 장기간 비가 내리지 않아 땅이 메마른 현상",
+                    "③ 지구 내부 에너지에 의해 땅이 흔들리는 현상",
+                    "④ 평년보다 기온이 매우 낮아 추위가 심한 현상",
+                    "⑤ 해저에서 지진이 발생하여 거대한 파도가 해안을 덮치는 현상"
+                ],
+                answer: 3,
+                explanation: "가로 2번 자음·모음 칸에 들어갈 자연재해는 '지진'이며, 지진은 지구 내부 에너지에 의해 땅이 흔들리는 현상(③)입니다."
+            },
+            {
+                id: "25-03-1-11",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 3월 고1",
+                number: "11번",
+                points: "2점",
+                pageRef: "2025학년도 3월 고1 문제지 3쪽 11번",
+                topic: "페루 쿠스코의 열대 고산 기후와 문화 융합",
+                stem: "다음 자료의 ㉠~㉤에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed">
+                        드디어 페루 쿠스코 시내 구경을 시작했다. <u>㉠ 연중 봄과 같이 온화한 기후</u>가 나타난다고는 하지만 기온의 <u>㉡ &nbsp;&nbsp;&nbsp;&nbsp;</u>이/가 커서 아침, 저녁으로 꽤 쌀쌀하다. 판초를 입은 원주민이 알파카와 <u>㉢ 라마</u>를 데리고 다니는 모습을 보니 제대로 남미를 여행하는 기분이 든다. 쿠스코는 한때 잉카 제국의 수도였지만, 이후 <u>㉣ 유럽의 식민 지배</u>를 받은 영향으로 유럽풍 건축물을 많이 볼 수 있다. 그중에서 광장에 있는 대성당을 방문하였다. 가장 인상 깊었던 것은 <u>㉤ 성화(聖畫)인 '최후의 만찬'</u>이다. 크리스트교 성서의 내용을 그린 것이지만 식탁의 한가운데에는 페루 원주민의 전통 음식인 꾸이가 그려져 있다.
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 적도 부근의 저지대에서 주로 나타나는 특징이다.",
+                    "② ㉡에 들어가기에 적절한 말은 '일교차'이다.",
+                    "③ ㉢은 안데스 산지에서 짐을 나르는 데 유용한 가축이다.",
+                    "④ ㉣로 인해 페루에서는 에스파냐어가 공용어로 사용된다.",
+                    "⑤ ㉤은 유럽 문화와 원주민 문화가 융합된 사례이다."
+                ],
+                answer: 1,
+                explanation: "① 연중 봄과 같이 온화한 상춘 기후(㉠)는 적도 부근의 '저지대'가 아니라 해발 고도가 높은 '고산 지대(열대 고산 기후)'에서 나타나는 특징입니다."
+            },
+            {
+                id: "25-03-1-12",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 3월 고1",
+                number: "12번",
+                points: "2점",
+                pageRef: "2025학년도 3월 고1 문제지 3쪽 12번",
+                topic: "아이슬란드의 화산 지형(간헐천, 지열 발전)과 백야 현상",
+                stem: "다음 자료의 (가)에 해당하는 국가를 지도의 A~E에서 고른 것은?",
+                boxContent: `
+                    <div class="space-y-1.5 text-sm bg-slate-50 p-3 rounded border border-slate-300 mb-2">
+                        <div><strong>대화1:</strong> 이번 휴가에 <strong>(가)</strong>을/를 여행하려고 하는데, 어떻게 생각해?</div>
+                        <div><strong>대화2:</strong> 화산 활동이 활발한 나라라서 간헐천도 있고, 어쩌면 용암이 분출하는 걸 볼 수 있을지도 몰라!</div>
+                        <div><strong>대화3:</strong> '블루 라군'은 꼭 가야 돼! 세계적으로 유명한 야외 온천이야! 지열 발전소에서 나온 온수를 사용한대!</div>
+                        <div><strong>대화4:</strong> 나는 6월에 가서 백야 투어를 했는데, 밝은 밤하늘이 참 신기했어.</div>
+                    </div>
+                    <div class="text-xs bg-white p-2 border border-slate-300 rounded">
+                        <strong>[세계 지도 표시]</strong> A: 아이슬란드 / B: 튀르키예 / C: 미얀마 / D: 남아프리카 공화국 / E: 뉴질랜드
+                    </div>
+                `,
+                choices: ["① A", "② B", "③ C", "④ D", "⑤ E"],
+                answer: 1,
+                explanation: "화산 활동, 간헐천, 블루 라군 야외 온천(지열 발전), 6월 백야 현상이 나타나는 북대서양 고위도 섬나라는 지도의 A(아이슬란드)입니다."
+            },
+            {
+                id: "25-06-1-02",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 6월 고1",
+                number: "2번",
+                points: "2.5점",
+                pageRef: "2025학년도 6월 고1 문제지 1쪽 2번",
+                topic: "한대 기후(개 썰매)와 열대 기후(카카오 수확)의 기후 요소 비교",
+                stem: "다음 자료는 지도에 표시된 두 지역의 생활 모습을 나타낸 것이다. (가) 지역과 비교한 (나) 지역의 상대적 특징을 그림의 A~E에서 고른 것은?",
+                boxContent: `
+                    <div class="grid grid-cols-2 gap-3 text-xs mb-2">
+                        <div class="border border-slate-400 p-2 rounded bg-slate-50">
+                            <div class="font-bold text-blue-800">(가) 북극권 스칸디나비아 북부</div>
+                            <div>개 썰매를 끌고 있는 원주민 (한대 기후)</div>
+                        </div>
+                        <div class="border border-slate-400 p-2 rounded bg-slate-50">
+                            <div class="font-bold text-emerald-800">(나) 적도 부근 기니만 연안</div>
+                            <div>카카오를 수확하는 농민 (열대 기후)</div>
+                        </div>
+                    </div>
+                    <div class="text-xs bg-white p-2 border border-slate-300 rounded">
+                        <strong>[3차원 좌표 그래프 판독]</strong> (가) 대비 (나)의 특징:<br>
+                        • 최난월 평균 기온: <strong>높다</strong> / • 연 강수량: <strong>많다</strong> / • 기온의 연교차: <strong>작다</strong> → 꼭짓점 <strong>C</strong>
+                    </div>
+                `,
+                choices: ["① A", "② B", "③ C", "④ D", "⑤ E"],
+                answer: 3,
+                explanation: "열대 기후 지역인 (나)는 한대 기후 지역인 (가)보다 최난월 평균 기온이 높고, 연 강수량이 많으며, 기온의 연교차가 작습니다. 따라서 C입니다."
+            },
+            {
+                id: "25-06-1-03",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 6월 고1",
+                number: "3번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 1쪽 3번",
+                topic: "베트남 할롱베이의 카르스트(석회암 용식) 지형과 환경 보전",
+                stem: "다음은 신문 기사의 일부이다. 밑줄 친 ㉠~㉣에 대한 설명으로 옳은 것만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="font-bold text-slate-800 mb-1">○○신문: 할롱베이, 부유 쓰레기로 '몸살'</div>
+                    <div class="text-sm leading-relaxed">
+                        할롱베이는 물에 잠긴 <u>㉠ 카르스트(Karst) 지형</u>으로 유명하다. <u>㉡ 할롱베이의 약 1,600개의 크고 작은 기암 괴석과 섬들</u>이 <u>㉢ 독특한 자연 경관</u>을 이루고 있다. 하지만 최근 할롱베이는 무분별한 개발과 관광객들이 버린 쓰레기로 몸살을 앓고 있으며, 이에 당국은 자연 그 자체를 보존하기 위해서 <u>㉣ 폐기물 투기 행위에 대한 단속을 강화</u>할 방침이다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠은 기반암이 용식 작용을 받아 형성되었다.<br>
+                    ㄴ. ㉡의 주된 기반암은 현무암이다.<br>
+                    ㄷ. ㉢은 관광 산업 발달에 유리한 조건이 될 수 있다.<br>
+                    ㄹ. ㉣은 경제적 측면만을 강조한 해결 방안으로 환경적 측면이 배제되어 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ. 카르스트 지형은 석회암이 용식 작용을 받아 형성됩니다. ㄷ. 독특한 자연 경관은 관광 산업 발달에 유리합니다. (기반암은 석회암입니다.)"
+            },
+            {
+                id: "25-06-1-06",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 6월 고1",
+                number: "6번",
+                points: "2.5점",
+                pageRef: "2025학년도 6월 고1 문제지 2쪽 6번",
+                topic: "제주도의 화산 지형(한라산, 주상절리, 오름)과 전통 가옥",
+                stem: "다음은 온라인 공유 게시판의 일부이다. 밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5">
+                        <div class="font-bold">1) 제주도의 다양한 화산 지형과 주민 생활 조사하기</div>
+                        <div>• <u>㉠ 한라산</u>, 성산 일출봉, 거문 오름 용암 동굴계는 세계 자연 유산에 등재되었다.</div>
+                        <div>• 기생 화산 중 하나인 도너리 오름은 훼손돼 2026년까지 <u>㉡ 자연 휴식년제</u> 기간을 연장하기로 결정되었다.</div>
+                        <div class="font-bold pt-1">2) 일러스트를 만들어 지도에 첨부하기</div>
+                        <div>• 해안가의 <u>㉢ 주상절리</u> / • 강한 바람에 대비한 <u>㉣ 돌담</u>과 그물 지붕을 갖춘 전통 가옥</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠의 정상부에는 분화구에 물이 고인 호수가 있다.<br>
+                    ㄴ. ㉡은 생태계를 보존하기 위한 노력으로 볼 수 있다.<br>
+                    ㄷ. ㉢은 용암이 냉각 및 수축되는 과정에서 형성되었다.<br>
+                    ㄹ. ㉣은 주로 주변에서 얻기 쉬운 석회암을 이용하여 쌓았다.
+                `,
+                choices: ["① ㄱ, ㄷ", "② ㄱ, ㄹ", "③ ㄴ, ㄹ", "④ ㄱ, ㄴ, ㄷ", "⑤ ㄴ, ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄱ(백록담 화구호), ㄴ(자연 휴식년제), ㄷ(용암 냉각·수축에 의한 주상절리) 모두 옳습니다. 제주도 돌담은 현무암을 이용했습니다."
+            },
+            {
+                id: "25-06-1-08",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 노력 (생태 시민)",
+                exam: "2025학년도 6월 고1",
+                number: "8번",
+                points: "1.5점",
+                pageRef: "2025학년도 6월 고1 문제지 2쪽 8번",
+                topic: "디지털 탄소 발자국과 온실가스 감축을 위한 생태 시민의 자세",
+                stem: "다음 자료의 (가)에 들어갈 내용으로 적절한 것만을 <보기>에서 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed">
+                        스마트폰 등 디지털 기기 사용 시간이 늘어나면서 온실가스 배출량이 증가하고 있다. 그 이유는 디지털 기기에서 사용하는 네트워크는 데이터 센터와 연결되어 있는데, 데이터 센터의 적정 온도를 유지하기 위해 냉각 장치가 작동되는 과정에서 온실가스가 배출되기 때문이다. 정보 통신 기기 및 서비스의 생산과 폐기에 이르는 전 과정에서 발생하는 온실가스의 양을 '디지털 탄소 발자국'이라 한다. 이러한 디지털 탄소 발자국을 줄이기 위해 생태 시민으로서 지녀야 할 자세는 <strong>(가)</strong> 등이 있다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. 스마트폰을 비롯한 디지털 기기 자주 교체하기<br>
+                    ㄴ. 네트워크 사용량 감소를 위해 디지털 기기 사용 시간 줄이기<br>
+                    ㄷ. 디지털 기기 관련 기업에 탄소 배출을 줄이는 생산 방식 요구하기<br>
+                    ㄹ. 데이터 센터의 운영 과정에서 발생하는 온실가스의 위험성에 대해 경각심 지니기
+                `,
+                choices: ["① ㄱ, ㄷ", "② ㄱ, ㄹ", "③ ㄴ, ㄹ", "④ ㄱ, ㄴ, ㄷ", "⑤ ㄴ, ㄷ, ㄹ"],
+                answer: 5,
+                explanation: "디지털 기기를 자주 교체(ㄱ)하면 기기 생산·폐기 과정에서 탄소 배출량이 오히려 증가합니다. ㄴ, ㄷ, ㄹ이 생태 시민으로서 지녀야 할 바람직한 자세입니다."
+            },
+            {
+                id: "25-06-1-09",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-2. 자연재해와 인간 생활",
+                exam: "2025학년도 6월 고1",
+                number: "9번",
+                points: "1.5점",
+                pageRef: "2025학년도 6월 고1 문제지 3쪽 9번",
+                topic: "자연재해대책법과 태풍·홍수의 특징",
+                stem: "다음 자료의 밑줄 친 ㉠~㉢에 대한 설명으로 옳은 것만을 <보기>에서 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        <strong><u>㉠ 자연재해대책법</u> 제1장 총칙</strong><br>
+                        제1조(목적) 이 법은 <u>㉡ 태풍</u>, <u>㉢ 홍수</u> 등 자연현상으로 인한 재난으로부터 국토를 보존하고 국민의 생명·신체 및 재산과 주요 기간시설을 보호하기 위하여 자연재해의 예방·복구 및 그 밖의 대책에 관하여 필요한 사항을 규정함을 목적으로 한다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠을 통해 국가는 국민의 생명과 재산을 보호하고자 한다.<br>
+                    ㄴ. ㉡은 강한 바람과 많은 비를 동반하는 열대 저기압이다.<br>
+                    ㄷ. ㉢의 피해를 줄이기 위한 시설에는 다목적 댐, 저수지 등이 있다.<br>
+                    ㄹ. 우리나라는 여름철보다 겨울철에 ㉡과 ㉢으로 인한 피해가 크다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄹ", "③ ㄷ, ㄹ", "④ ㄱ, ㄴ, ㄷ", "⑤ ㄴ, ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄱ, ㄴ, ㄷ 모두 옳은 설명입니다. 우리나라는 겨울철보다 여름철에 태풍과 홍수로 인한 피해가 집중됩니다."
+            },
+            {
+                id: "25-06-1-11",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 주체별 노력",
+                exam: "2025학년도 6월 고1",
+                number: "11번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 3쪽 11번",
+                topic: "미세플라스틱 해양 오염 문제 해결을 위한 시민 단체(A), 정부(B), 기업(C)의 역할",
+                stem: "다음 자료에 대한 설명으로 옳은 것은? (단, A~C는 각각 기업, 정부, 시민 단체 중 하나임.)",
+                boxContent: `
+                    <div class="text-sm space-y-1.5">
+                        <div>○ <strong>A(시민 단체)</strong>는 미세플라스틱이 인체에 심각한 위협이 됨을 알리고 <u>㉠ 건강하고 쾌적한 환경에서 생활할 권리</u> 보장을 위한 대책을 촉구하는 집회를 열었다.</div>
+                        <div>○ <strong>B(정부)</strong>는 미세플라스틱 배출로 인한 해양 오염 문제의 심각성을 인지하고 공식적인 공청회를 열어 <u>㉡ 이와 관련한 규제 정책의 보완</u>에 나섰다.</div>
+                        <div>○ <strong>C(기업)</strong>는 미세플라스틱으로 인한 오염 문제를 개선하기 위해 친환경 경영을 선언하고 생분해성 플라스틱 소재의 개발과 생산에 나섰다.</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 헌법에서 보장되지 않는다.",
+                    "② ㉡으로는 '폐수 처리 기준의 완화'를 들 수 있다.",
+                    "③ B는 국제 협약을 맺어 국제 사회와 협력할 수 있다.",
+                    "④ B와 달리 C는 환경 오염 행위를 감시하고 법적 제재를 가할 수 있다.",
+                    "⑤ C와 달리 A는 기술 혁신을 통해 오염 물질 배출을 줄일 수 있다."
+                ],
+                answer: 3,
+                explanation: "A는 시민 단체, B는 정부, C는 기업입니다. ③ 정부(B)는 다른 국가와 국제 협약을 체결하여 환경 문제 해결을 위해 국제 사회와 협력할 수 있습니다."
+            },
+            {
+                id: "25-06-1-13",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 6월 고1",
+                number: "13번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 3쪽 13번",
+                topic: "마추픽추(열대 고산 기후) 지역의 기후 특징과 관광 상품",
+                stem: "다음은 수행평가의 일부이다. (가)에 들어갈 내용으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="font-bold text-center mb-2">&lt;○○ 기후가 나타나는 지역의 관광 책자(리플릿) 만들기&gt;</div>
+                    <div class="grid grid-cols-3 gap-2 text-xs text-center border border-slate-500 p-2 bg-slate-50">
+                        <div><div class="font-bold border-b pb-1 mb-1">지역 소개</div>해발 고도 2,430m에 위치한 마추픽추</div>
+                        <div><div class="font-bold border-b pb-1 mb-1">기후 특징</div>연중 우리나라의 봄과 같은 온화한 날씨가 나타남</div>
+                        <div><div class="font-bold border-b pb-1 mb-1">관광 상품</div><div class="font-bold text-blue-700 py-2">(가)</div></div>
+                    </div>
+                `,
+                choices: [
+                    "① 유람선을 타고 피오르 관광하기",
+                    "② 밤하늘을 물들이는 오로라 관찰하기",
+                    "③ 현지인과 함께하는 고무나무 수액 채취하기",
+                    "④ 넓은 초원에서 이동식 가옥인 게르 체험하기",
+                    "⑤ 고산 도시에서 라마, 알파카와 함께 영상 촬영하기"
+                ],
+                answer: 5,
+                explanation: "페루 마추픽추 등 안데스 산지의 열대 고산 기후 지역에서는 원주민들이 라마, 알파카를 사육하므로 ⑤가 가장 적절합니다."
+            },
+            {
+                id: "25-06-1-14",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 6월 고1",
+                number: "14번",
+                points: "1.5점",
+                pageRef: "2025학년도 6월 고1 문제지 4쪽 14번",
+                topic: "건조(사막) 기후 지역의 전통 가옥(흙벽돌집), 의복 및 농업",
+                stem: "다음은 학생의 탐구 활동 보고서이다. 밑줄 친 ㉠에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>• 탐구 주제:</strong> 자연환경이 인간 생활에 미치는 영향</div>
+                        <div><strong>• 탐구 대상:</strong> <u>㉠ ○○ 기후 지역</u>의 전통 가옥과 의복</div>
+                        <div><strong>• 탐구 내용:</strong> 전통 가옥인 흙벽돌집은 비가 거의 오지 않아 지붕 모양이 평평하고, 창문이 작고 벽이 두껍다. 전통 의복은 강한 햇볕과 모래바람을 막기 위해 온몸을 감싸는 헐렁한 형태이다.</div>
+                    </div>
+                `,
+                choices: [
+                    "① 계절풍의 영향으로 벼농사가 발달한다.",
+                    "② 오아시스 농업이나 관개 농업이 발달한다.",
+                    "③ 이동식 화전 농업을 통해 얌, 카사바를 재배한다.",
+                    "④ 올리브, 포도 등을 재배하는 수목 농업이 주로 발달한다.",
+                    "⑤ 대규모 침엽수림의 나무를 베어 목재나 종이를 생산한다."
+                ],
+                answer: 2,
+                explanation: "사막(건조) 기후 지역에서는 물을 구할 수 있는 오아시스 주변이나 관개 시설을 이용한 오아시스·관개 농업이 발달합니다."
+            },
+            {
+                id: "25-06-1-20",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 노력",
+                exam: "2025학년도 6월 고1",
+                number: "20번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 5쪽 20번",
+                topic: "세계 사막화 방지의 날과 세계 오존층 보호의 날(몬트리올 의정서)",
+                stem: "다음 자료에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="border border-amber-400 bg-amber-50 p-3 rounded">
+                            <div class="font-bold text-amber-900 mb-1">6월 17일: 세계 <u>㉠ 사막화</u> 방지의 날</div>
+                            <div>1994년 세계 사막화 방지를 위해 <strong>(가)</strong>을/를 채택하면서 이날을 제정하였다.</div>
+                        </div>
+                        <div class="border border-sky-400 bg-sky-50 p-3 rounded">
+                            <div class="font-bold text-sky-900 mb-1">9월 16일: 세계 오존층 보호의 날</div>
+                            <div>1987년 <u>㉡ 오존층 파괴</u> 물질의 사용 규제를 명시한 <strong>(나)</strong>을/를 채택하면서 이날을 제정하였다.</div>
+                        </div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠의 대표적인 사례 지역으로 사헬 지대, 아랄해 일대가 있다.",
+                    "② ㉡으로 인해 지표로 도달하는 자외선이 감소한다.",
+                    "③ ㉡의 주요 원인은 장기간의 가뭄, 과도한 방목 및 개간 등이다.",
+                    "④ ㉠과 ㉡을 해결하기 위해서는 인간과 자연을 분리하는 이분법적 세계관이 필요하다.",
+                    "⑤ (가)는 몬트리올 의정서, (나)는 바젤 협약이다."
+                ],
+                answer: 1,
+                explanation: "① 사막화(㉠)의 대표적인 사례 지역은 사헬 지대와 아랄해 일대입니다."
+            },
+            {
+                id: "25-06-1-21",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 노력 (하천 생태계 복원)",
+                exam: "2025학년도 6월 고1",
+                number: "21번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 5쪽 21번",
+                topic: "생태적 관점에서 바라본 하천 생태계 복원 사업과 자연형 호안",
+                stem: "(가)의 관점에서 (나)의 밑줄 친 ㉠~㉣을 평가한 것으로 옳은 것만을 <보기>에서 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-2">
+                        <div><strong>(가)</strong> 인간과 자연 중 한쪽만을 강조하는 사고로는 현실의 문제를 해결할 수 없다. 자연을 개발의 대상이 아닌 인간과 유기적으로 연결되어 있는 대상으로 인식하는 사고의 전환이 필요하다.</div>
+                        <div><strong>(나)</strong> ○○시는 2007년부터 <u>㉠ 생태계 회복을 위한 하천 복원 사업</u>을 추진하고 있다. 콘크리트 등 인공 소재로 조성했던 호안을 흙·자갈·큰 돌 같은 자연 소재로 복원하는 <u>㉡ 자연형 호안 조성 사업</u>을 시행하고 <u>㉢ 생태 공원을 조성</u>하는 등 생물종 다양성 증가를 위한 노력을 기울였다. 그 결과 생태공원에서 수달, <u>㉣ 맹꽁이</u> 등 멸종 위기 동물의 서식이 확인되었다.</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. 생태 도시를 지정하는 것은 ㉠에 기여하는 방안이다.<br>
+                    ㄴ. ㉡은 자연에 대한 인간의 윤리적 책임을 강조한 것이다.<br>
+                    ㄷ. ㉢은 하천의 자정 능력을 향상시키고자 한다.<br>
+                    ㄹ. ㉣은 인간과 자연의 공존을 위협한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄹ", "③ ㄷ, ㄹ", "④ ㄱ, ㄴ, ㄷ", "⑤ ㄴ, ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄱ, ㄴ, ㄷ 모두 생태계 복원 및 인간과 자연의 공존을 위한 노력에 해당합니다. 멸종 위기 동물인 맹꽁이 서식 확인(㉣)은 생태계 회복의 긍정적 결과입니다."
+            },
+            {
+                id: "25-06-1-22",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 노력",
+                exam: "2025학년도 6월 고1",
+                number: "22번",
+                points: "1.5점",
+                pageRef: "2025학년도 6월 고1 문제지 6쪽 22번",
+                topic: "지구 온난화의 원인과 결과 및 기후 난민 문제",
+                stem: "다음 자료의 밑줄 친 ㉠~㉣에 대한 설명으로 옳은 것만을 <보기>에서 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="space-y-1.5 text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>대화1:</strong> 얼마 전 <u>㉠ 지구 온난화의 결과</u>로 이상 기후가 세계 곳곳에서 나타난다는 뉴스를 봤어. 기후 난민을 도울 방법이 없을까?</div>
+                        <div><strong>대화2:</strong> 일단 <u>㉡ 지구 온난화의 원인</u>을 파악하고 분석하는 것이 필요하다고 생각해.</div>
+                        <div><strong>대화3:</strong> 이미 위기에 놓인 <u>㉢ 기후 난민의 인권을 보장할 수 있는 방법</u>을 강구해야 해.</div>
+                        <div><strong>대화4:</strong> <u>㉣ 나는 어떤 경우라도 타국의 기후 난민보다 자국의 국민을 먼저 돕는 것이 옳다고 생각해.</u></div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠으로 빙하가 녹아 해안 저지대 침수가 나타날 수 있다.<br>
+                    ㄴ. ㉡으로 열대 우림 지역 개발로 인한 삼림 파괴를 들 수 있다.<br>
+                    ㄷ. ㉢으로 기후 난민의 안전을 보장하는 정책 마련을 들 수 있다.<br>
+                    ㄹ. ㉣은 세계는 하나의 공동체이기 때문에 국내 문제와 국제 문제를 동등하게 인식해야 한다는 입장이다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄹ", "③ ㄷ, ㄹ", "④ ㄱ, ㄴ, ㄷ", "⑤ ㄴ, ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄱ, ㄴ, ㄷ 모두 옳습니다. ㄹ은 자국 우선주의 입장이므로 틀렸습니다."
+            },
+            {
+                id: "25-06-1-25",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 6월 고1",
+                number: "25번",
+                points: "2.5점",
+                pageRef: "2025학년도 6월 고1 문제지 6쪽 25번",
+                topic: "해안 지형(갯벌, 해안 절벽, 파식대)의 형성 작용과 생태적 가치",
+                stem: "다음은 학생 발표회의 일부이다. 밑줄 친 ㉠~㉤에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-2">
+                        <div><strong>1) 활동 내용:</strong> <u>㉠ 해안 지역</u> 쓰담 달리기 및 스케치하기</div>
+                        <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-2.5 rounded border border-slate-300">
+                            <div><strong>[그림 1]</strong> <u>㉡ 갯벌</u>을 관찰하고, <u>㉢ 갯벌 주변에 서식하는 식물</u>을 표현했습니다.</div>
+                            <div><strong>[그림 2]</strong> <u>㉣ 해안 절벽</u>과 그 앞쪽에 발달한 <u>㉤ 평탄한 바위면</u>을 스케치했습니다.</div>
+                        </div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 육지와 바다가 만나는 공간으로 해안 생물의 서식지 역할을 한다.",
+                    "② ㉡은 오염 물질 정화의 기능을 가진다.",
+                    "③ 국제 사회는 람사르 협약을 통해 ㉡을 보호하고자 노력한다.",
+                    "④ ㉢은 육지 식물에 비해 염분에 강한 특성을 지닌다.",
+                    "⑤ ㉣과 ㉤은 주로 조류의 퇴적 작용으로 형성되었다."
+                ],
+                answer: 5,
+                explanation: "⑤ 해안 절벽(해식애, ㉣)과 파식대(㉤)는 조류의 퇴적 작용이 아니라 '파랑의 침식 작용'으로 형성됩니다."
+            },
+            {
+                id: "25-09-1-03",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 9월 고1",
+                number: "3번",
+                points: "1.5점",
+                pageRef: "2025학년도 9월 고1 문제지 1쪽 3번",
+                topic: "노르웨이의 피오르(빙하 침식)와 모로코의 모래 언덕(사구)",
+                stem: "(가), (나)에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="border border-slate-400 p-2.5 rounded bg-slate-50">
+                            <div class="font-bold text-slate-800">(가) 노르웨이의 피오르</div>
+                            <div class="text-slate-600 mt-1">스칸디나비아반도 서안의 빙하 침식 해안</div>
+                        </div>
+                        <div class="border border-slate-400 p-2.5 rounded bg-slate-50">
+                            <div class="font-bold text-slate-800">(나) 모로코의 모래 언덕</div>
+                            <div class="text-slate-600 mt-1">북아프리카 사하라 사막의 바람 퇴적 지형(사구)</div>
+                        </div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)는 카르스트 지형으로 관광 산업에 활용된다.<br>
+                    ㄴ. (나)에서는 강한 햇빛과 모래바람을 막기 위한 전통 의복을 볼 수 있다.<br>
+                    ㄷ. (가)는 (나)보다 수력 발전소 입지에 유리하다.<br>
+                    ㄹ. (가)는 바람의 퇴적, (나)는 빙하의 침식 작용으로 주로 형성되었다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 3,
+                explanation: "ㄴ. 사막 지역인 (나)에서는 온몸을 감싸는 전통 의복을 입습니다. ㄷ. 피오르 해안이 있는 노르웨이(가)는 지형적 낙차가 크고 유량이 풍부하여 수력 발전에 유리합니다."
+            },
+            {
+                id: "25-09-1-17",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 9월 고1",
+                number: "17번",
+                points: "2.5점",
+                pageRef: "2025학년도 9월 고1 문제지 4쪽 17번",
+                topic: "지중해성 기후(A), 냉대 기후(B), 열대 우림 기후(C) 그래프 분석",
+                stem: "그래프는 지도에 표시된 세 지역의 기후 값을 나타낸 것이다. 이에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>A (이탈리아 로마 부근, 지중해 연안):</strong> 여름(6~8월) 건조, 겨울(12~2월) 습윤한 온대 지중해성 기후</div>
+                        <div>• <strong>B (러시아 시베리아 바이칼호 부근):</strong> 1월 기온 -20℃ 이하, 기온의 연교차가 매우 큰 냉대 기후</div>
+                        <div>• <strong>C (적도 부근 인도네시아 보르네오섬):</strong> 연중 25℃ 이상 고온, 매달 강수량 200mm 이상인 열대 우림 기후</div>
+                    </div>
+                `,
+                choices: [
+                    "① A에는 오렌지, 올리브 등을 재배하는 수목 농업이 활발하다.",
+                    "② B에는 타이가라고 불리는 침엽수림이 넓게 분포한다.",
+                    "③ C에는 지면의 열과 습기를 피하기 위해 고상 가옥이 발달한다.",
+                    "④ A는 B보다 12~2월 강수 집중률이 높다.",
+                    "⑤ C는 B보다 기온의 연교차가 크다."
+                ],
+                answer: 5,
+                explanation: "⑤ 열대 우림 기후(C)는 일 년 내내 기온이 높아 기온의 연교차가 가장 작고, 냉대 기후(B)는 기온의 연교차가 매우 큽니다."
+            },
+            {
+                id: "25-09-1-23",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제와 자연관 (베이컨과 레오폴드)",
+                exam: "2025학년도 9월 고1",
+                number: "23번",
+                points: "2.5점",
+                pageRef: "2025학년도 9월 고1 문제지 6쪽 23번",
+                topic: "인간 중심주의(베이컨)와 생태 중심주의(레오폴드)의 대지 이용 관점",
+                stem: "(가)의 갑, 을 사상가들의 입장을 (나) 그림으로 탐구하고자 할 때, A~C에 해당하는 적절한 질문만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>갑(베이컨):</strong> 아는 것이 힘이다. 인간은 자연의 사용자로서 방황하고 있는 자연을 사냥해서 노예로 만들어 인간의 이익에 봉사하도록 해야 한다.</div>
+                        <div><strong>을(레오폴드):</strong> 바람직한 대지 이용을 경제적 문제로만 생각하지 말고 윤리적, 심미적 관점에서도 검토해야 한다. 생명 공동체의 통합성과 안정성, 아름다움의 보전에 이바지한다면 그것은 옳다.</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. A(공통 부정 질문): 인간의 생존을 위해 대지를 자원으로 활용할 수 있는가?<br>
+                    ㄴ. B(갑 긍정의 질문): 자연의 가치는 인간의 이익과 필요에 따라 평가되는가?<br>
+                    ㄷ. C(을 긍정의 질문): 인간은 자연 내의 다른 생명체보다 우월한 존재인가?<br>
+                    ㄹ. C(을 긍정의 질문): 무생물을 포함한 생태계 전체를 도덕적으로 고려해야 하는가?
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "갑(인간 중심주의)만이 '예'라고 답할 B에는 ㄴ이, 을(생태 중심주의)만이 '예'라고 답할 C에는 무생물을 포함한 생태계 전체의 도덕적 고려를 묻는 ㄹ이 적절합니다."
+            },
+            {
+                id: "25-09-1-25",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 노력",
+                exam: "2025학년도 9월 고1",
+                number: "25번",
+                points: "1.5점",
+                pageRef: "2025학년도 9월 고1 문제지 6쪽 25번",
+                topic: "태평양 거대 쓰레기 지대(해양 플라스틱 쓰레기) 문제와 해결 대책",
+                stem: "다음 자료의 (가)에 해당하는 환경 문제를 해결하기 위한 대책으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        국제 연합(UN)은 해류 순환과 바람의 작용으로 태평양에 쌓인 <strong>(가)</strong>의 주요 집적 지역을 정식 국가(쓰레기 섬)로 인정하였다. 공식 화폐에는 전 세계가 배출한 <strong>(가)</strong>로 고통받는 바다사자, 갈매기, 거북이 등이 등장한다.
+                    </div>
+                `,
+                choices: [
+                    "① 국제 사회는 몬트리올 의정서를 준수해야 한다.",
+                    "② 정부는 플라스틱 제품 사용 규제를 완화해야 한다.",
+                    "③ 시민 단체는 친환경 제품을 인증하는 법률을 제정한다.",
+                    "④ 기업은 이윤 추구를 위해 일회용품 생산량을 증가시켜야 한다.",
+                    "⑤ 개인은 생태 시민으로서 플라스틱 제품 사용량을 줄여야 한다."
+                ],
+                answer: 5,
+                explanation: "(가)는 해양 플라스틱 쓰레기 문제이며, 개인은 생태 시민으로서 플라스틱 제품 사용량을 줄여야 합니다."
+            },
+            {
+                id: "25-10-1-04",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제와 대지 윤리 (간척 사업과 갯벌 매립)",
+                exam: "2025학년도 10월 고1",
+                number: "4번",
+                points: "1.5점",
+                pageRef: "2025학년도 10월 고1 문제지 1쪽 4번",
+                topic: "갯벌 매립과 폐수 문제에 대해 레오폴드의 대지 윤리 관점에서 제시할 조언",
+                stem: "다음을 주장한 사상가의 관점에서 위 자료(3~4번 공통 지문: 갯벌 매립과 폐수 발생으로 고민하는 사업가 '갑')에게 제시할 조언으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        대지 윤리는 인류의 역할을 대지 공동체의 정복자에서 평범한 구성원이자 시민으로 변화시킨다. 또한 대지 윤리는 인류의 동료 구성원에 대한 존중, 그리고 공동체 자체에 대한 존중을 필연적으로 수반한다.
+                    </div>
+                `,
+                choices: [
+                    "① 개인 사업으로 창출되는 경제적 이익을 우선시하세요.",
+                    "② 이분법적 세계관을 바탕으로 인간과 자연을 구분하세요.",
+                    "③ 자연 그 자체는 도덕적 고려 대상이라는 점을 명심하세요.",
+                    "④ 인간은 자연을 지배해야 하는 우월한 존재임을 자각하세요.",
+                    "⑤ 해양 생물보다 인간을 위한 자연 개발이 중요함을 인식하세요."
+                ],
+                answer: 3,
+                explanation: "제시문은 생태 중심주의 사상가 레오폴드의 대지 윤리입니다. 대지 공동체(자연 그 자체)는 도덕적 고려 대상이므로 갯벌과 해양 생물을 존중해야 한다는 ③이 가장 적절합니다."
+            },
+            {
+                id: "25-10-1-08",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 노력",
+                exam: "2025학년도 10월 고1",
+                number: "8번",
+                points: "1.5점",
+                pageRef: "2025학년도 10월 고1 문제지 2쪽 8번",
+                topic: "산성비(이산화 황)와 오존층 파괴(염화 플루오린화 탄소) 문제",
+                stem: "그림은 환경 문제에 대한 신문 칼럼이다. (가), (나)에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        노르웨이 숲의 나무와 호수의 물고기가 사라져 갔다. 도시의 건축물과 조각상은 녹아내렸다. 국경을 넘어 온 오염 물질에 의한 <strong>(가) 산성비</strong> 문제 때문이었다. 유럽 국가들은 1979년 협약(제네바 협약)을 체결해 이산화 황 배출량을 줄였다.<br>
+                        또 다른 사례로 염화 플루오린화 탄소(CFCs)의 배출 증가로 인해 발생한 <strong>(나) 오존층 파괴</strong> 문제가 개선되어 현재 남극 상공의 구멍이 점차 회복되고 있다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)는 지표에 도달하는 자외선의 양을 증가시킨다.<br>
+                    ㄴ. (나)는 호흡기 질환 발병률 증가의 주된 원인이다.<br>
+                    ㄷ. (나)를 해결하기 위한 국제 협약은 몬트리올 의정서이다.<br>
+                    ㄹ. (가), (나)의 해결을 위한 노력은 지속가능한 발전에 기여한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 5,
+                explanation: "ㄷ. 오존층 파괴 물질 규제를 위한 국제 협약은 몬트리올 의정서입니다. ㄹ. 산성비와 오존층 파괴 해결 노력은 지속가능한 발전에 기여합니다."
+            },
+            {
+                id: "25-10-1-13",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2025학년도 10월 고1",
+                number: "13번",
+                points: "2점",
+                pageRef: "2025학년도 10월 고1 문제지 3쪽 13번",
+                topic: "아라비아반도 사막 도시(가)와 영국 런던 서안 해양성 기후(나)의 기후 그래프",
+                stem: "(가), (나)의 기후 그래프를 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>• (가) 도시 (아라비아반도 페르시아만 연안):</strong> 나무 한 그루 찾아보기 어려운 황량한 땅 → 사막 기후 (연중 고온, 강수량 극소)</div>
+                        <div><strong>• (나) 도시 (영국 런던):</strong> 선선한 날씨, 계절과 무관하게 종종 비가 내림 → 서안 해양성 기후 (연교차 작음, 연중 고른 강수)</div>
+                        <div><strong>&lt;보기 그래프&gt;</strong> ㄱ: 사막 기후 / ㄴ: 툰드라 기후 / ㄷ: 서안 해양성 기후 / ㄹ: 열대 우림 기후</div>
+                    </div>
+                `,
+                choices: ["① ㄱ - ㄴ", "② ㄱ - ㄷ", "③ ㄴ - ㄷ", "④ ㄷ - ㄹ", "⑤ ㄹ - ㄱ"],
+                answer: 2,
+                explanation: "(가)는 사막 기후인 ㄱ, (나)는 서안 해양성 기후인 ㄷ입니다."
+            },
+            {
+                id: "26-03-2-06",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제와 자연관 (베이컨과 레오폴드)",
+                exam: "2026학년도 3월 고2",
+                number: "6번",
+                points: "2점",
+                pageRef: "2026학년도 3월 고2 문제지 2쪽 6번",
+                topic: "인간 중심주의(베이컨)와 생태 중심주의(레오폴드)의 대지 이용 비교",
+                stem: "(가)의 갑, 을 사상가들의 입장을 (나) 그림으로 표현할 때, A~C에 해당하는 옳은 진술만을 <보기>에서 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>갑(베이컨):</strong> 인간의 지식이 곧 힘이다. 자연에 대한 인간의 지배권은 오직 기술과 학문에 달려 있다.</div>
+                        <div><strong>을(레오폴드):</strong> 인간은 대지 이용을 경제적 관점뿐만 아니라 윤리적, 심미적 관점에서도 검토해야 한다.</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. A(갑만의 입장): 인간은 경험적 지식을 축적하여 자연을 지배해야 한다.<br>
+                    ㄴ. B(공통 입장): 대지는 인간을 위한 경제적 자원으로 이용될 수 있다.<br>
+                    ㄷ. B(공통 입장): 인류의 복지 증진은 대지의 온전성 유지보다 중요하다.<br>
+                    ㄹ. C(을만의 입장): 동식물, 무생물은 모두 도덕적 존중의 대상에 포함된다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄷ, ㄹ", "④ ㄱ, ㄴ, ㄹ", "⑤ ㄴ, ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄱ(베이컨의 과학적 지식을 통한 자연 지배), ㄴ(레오폴드 역시 경제적 관점의 대지 이용 자체를 전면 부정하지 않고 윤리적·심미적 검토를 함께 요구함), ㄹ(레오폴드의 대지 공동체 범위)이 모두 옳습니다."
+            },
+            {
+                id: "26-03-2-07",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2026학년도 3월 고2",
+                number: "7번",
+                points: "1.5점",
+                pageRef: "2026학년도 3월 고2 문제지 2쪽 7번",
+                topic: "아마존 열대 우림 지역의 자연환경과 원주민 음식 문화 이해",
+                stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div class="text-xs font-bold text-emerald-800">[지도 표시: 남아메리카 적도 부근 아마존 분지 A 지역]</div>
+                        <div><strong>갑:</strong> 원주민들이 애벌레를 날것으로 먹는 문화는 우리나라의 음식 문화에 비해 미개한 것 같아.</div>
+                        <div><strong>을:</strong> 그 문화는 원주민들이 가축을 기르기 어려운 상황에서 단백질을 보충하기 위해 자연환경에 적응한 결과야.</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. A 지역은 주로 침엽수림이 분포한다.<br>
+                    ㄴ. A 지역은 연중 고온 다습한 기후가 나타난다.<br>
+                    ㄷ. 갑의 문화 이해 태도는 자문화의 정체성을 상실할 우려가 있다.<br>
+                    ㄹ. 을의 문화 이해 태도는 문화의 다양성을 보존하는 데 기여할 수 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ. 아마존 분지(A)는 연중 고온 다습한 열대 우림 기후가 나타납니다. ㄹ. 을의 태도는 문화 상대주의로 문화 다양성 보존에 기여합니다."
+            },
+            {
+                id: "26-03-2-13",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2026학년도 3월 고2",
+                number: "13번",
+                points: "2.5점",
+                pageRef: "2026학년도 3월 고2 문제지 4쪽 13번",
+                topic: "열대 고산(아디스아바바), 지중해성(세비야), 열대 사막(리야드) 기후 비교",
+                stem: "그래프는 세 지역의 기후 특성을 나타낸 것이다. 이에 대한 설명으로 옳은 것은? (단, A~C는 각각 지도에 표시된 세 지역 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>A (에티오피아 고원, 해발 2,354m):</strong> 7월 평균 기온 약 16℃, 연교차 약 3℃ (열대 고산 기후)</div>
+                        <div>• <strong>B (에스파냐 남부 지중해 연안, 해발 4m):</strong> 7월 평균 기온 약 25℃, 연교차 약 15℃ (지중해성 기후)</div>
+                        <div>• <strong>C (사우디아라비아 리야드, 해발 635m):</strong> 7월 평균 기온 약 37℃, 연 강수량 500mm 미만 (사막 기후)</div>
+                    </div>
+                `,
+                choices: [
+                    "① B는 1월 강수량이 7월 강수량보다 많다.",
+                    "② C에는 사바나 초원이 넓게 분포한다.",
+                    "③ A는 유럽, B는 아프리카에 위치한다.",
+                    "④ A는 B보다 적도와의 최단 거리가 멀다.",
+                    "⑤ C는 A보다 해발 고도가 높다."
+                ],
+                answer: 1,
+                explanation: "① 북반구 지중해성 기후인 B는 겨울철(1월) 강수량이 여름철(7월) 강수량보다 많습니다."
+            },
+            {
+                id: "26-03-2-14",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결과 세계 시민의 삶",
+                exam: "2026학년도 3월 고2",
+                number: "14번",
+                points: "1.5점",
+                pageRef: "2026학년도 3월 고2 문제지 4쪽 14번",
+                topic: "기후 변화로 인한 생태계 파괴와 세계 시민으로서의 바람직한 삶의 방향",
+                stem: "다음은 통합사회 수업 장면이다. 교사의 질문에 적절한 대답을 한 학생만을 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div class="font-bold">[미래 사회의 모습: 기후 변화의 가속화로 인한 생태계 파괴 등] → 세계 시민으로서의 바람직한 삶의 방향 ㉠</div>
+                        <div>• <strong>갑:</strong> 지구촌 전체의 이익을 고려하지 않고 자국의 이익만을 추구하는 태도를 가져야 합니다.</div>
+                        <div>• <strong>을:</strong> 인공 지능을 사용할 때 준수해야 할 국제 규범에 대해 성찰해야 합니다.</div>
+                        <div>• <strong>병:</strong> 지속 가능한 생태 환경을 조성하려는 국제적 협력에 동참해야 합니다.</div>
+                        <div>• <strong>정:</strong> 기아로 고통받는 분쟁 지역의 사람들을 연대 의식을 가지고 도와야 합니다.</div>
+                    </div>
+                `,
+                choices: ["① 갑, 을", "② 갑, 병", "③ 병, 정", "④ 갑, 을, 정", "⑤ 을, 병, 정"],
+                answer: 5,
+                explanation: "자국의 이익만을 추구하는 갑을 제외한 을, 병, 정이 세계 시민으로서 바람직한 태도를 제시했습니다."
+            },
+            {
+                id: "26-06-2-03",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2026학년도 6월 고2",
+                number: "3번",
+                points: "2점",
+                pageRef: "2026학년도 6월 고2 문제지 1쪽 3번",
+                topic: "안데스 고산(가), 동남아 열대 계절풍(나), 북아프리카 건조 사막(다) 지역 매칭",
+                stem: "다음 자료는 여행기의 일부이다. (가)~(다)에 해당하는 지역을 지도의 A~C에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>(가)</strong> 잉카 제국의 수도였던 곳으로 해발 고도가 높아 쾌적하지만 일교차가 커서 보온을 위해 '판초'를 구입하였다. (→ <strong>C 안데스 산지</strong>)</div>
+                        <div><strong>(나)</strong> 매년 4월 중순 곧 다가올 우기에 비가 충분히 내려 벼농사가 잘 되길 기원하며 물 축제를 즐긴다. (→ <strong>B 동남아시아</strong>)</div>
+                        <div><strong>(다)</strong> 오아시스 주변 마을로 진흙 벽돌과 야자수로 만든 전통 가옥은 창문이 작고 지붕이 평평하다. (→ <strong>A 북아프리카 사막</strong>)</div>
+                    </div>
+                `,
+                choices: ["① A - B - C", "② A - C - B", "③ B - A - C", "④ B - C - A", "⑤ C - B - A"],
+                answer: 5,
+                explanation: "(가)는 C, (나)는 B, (다)는 A입니다."
+            },
+            {
+                id: "26-06-2-07",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2026학년도 6월 고2",
+                number: "7번",
+                points: "2.5점",
+                pageRef: "2026학년도 6월 고2 문제지 2쪽 7번",
+                topic: "런던과의 기후 값 차이로 본 지중해성(A), 툰드라(B), 온대 겨울 건조(C) 기후",
+                stem: "그래프는 지도에 표시된 세 지역과 런던 간의 기후 값 차이를 나타낸 것이다. A~C 지역에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>A:</strong> 1월 기온 런던보다 +7℃ 높음, 7월 강수량 -45mm 적음 (이탈리아 지중해성 기후)</div>
+                        <div>• <strong>B:</strong> 1월 기온 런던보다 -15℃ 낮음, 7월 강수량 -15mm 적음 (고위도 한대 기후)</div>
+                        <div>• <strong>C:</strong> 1월 기온 런던보다 -10℃ 낮음, 7월 강수량 +110mm 많음 (동아시아 계절풍 기후)</div>
+                    </div>
+                `,
+                choices: [
+                    "① A의 주민들은 전통적으로 순록 유목이나 수렵 활동을 한다.",
+                    "② B에서는 올리브 등을 재배하는 수목 농업이 이루어진다.",
+                    "③ C는 런던보다 기온의 연교차가 작다.",
+                    "④ C는 A보다 계절풍의 영향을 많이 받는다.",
+                    "⑤ A, B, C는 모두 온대 기후 지역에 속한다."
+                ],
+                answer: 4,
+                explanation: "④ 동아시아(C)는 지중해 연안(A)보다 대륙과 해양의 비열 차이에 의한 계절풍의 영향을 많이 받습니다."
+            },
+            {
+                id: "26-06-2-12",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활 (열대 기후와 카카오 플랜테이션)",
+                exam: "2026학년도 6월 고2",
+                number: "12번",
+                points: "2점",
+                pageRef: "2026학년도 6월 고2 문제지 3쪽 12번",
+                topic: "서아프리카 열대 기후 지역의 카카오 플랜테이션과 윤리적 소비",
+                stem: "밑줄 친 ㉠~㉤에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        ○ 사상가 <u>㉠ 갈퉁</u>은 진정한 평화란 구조적 폭력과 문화적 폭력까지 모두 제거된 상태라고 주장한다.<br>
+                        ○ <u>㉡ 열대 기후 지역</u>에 속한 서아프리카의 ○○국은 세계 최대 <u>㉢ 카카오</u> 생산국이다. 그러나 그 이면에는 넓은 농장에서 대규모로 카카오를 재배하는 과정에서 발생하고 있는 <u>㉣ 아동 노동 착취 문제</u>가 깔려 있다. 따라서 <u>㉤ 공정무역과 윤리적 소비</u>의 실천이 요구된다.
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 직접적 폭력의 제거가 진정한 평화 실현을 보장한다고 본다.",
+                    "② ㉡은 대체로 기온의 일교차가 기온의 연교차보다 크다.",
+                    "③ ㉠에 따르면 ㉣은 문화적 폭력의 양상만을 띠는 것은 아니다.",
+                    "④ ㉢은 ㉡에서 주로 플랜테이션으로 재배된다.",
+                    "⑤ ㉤의 실천은 ㉣ 해결에 기여할 수 있다."
+                ],
+                answer: 1,
+                explanation: "① 갈퉁(㉠)은 직접적 폭력의 제거(소극적 평화)만으로는 진정한 평화가 보장되지 않으며, 구조적·문화적 폭력까지 제거된 적극적 평화가 필요하다고 보았습니다. ② 열대 기후(㉡)는 기온의 일교차가 연교차보다 큽니다."
+            },
+            {
+                id: "26-06-2-18",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제와 자연관 (데카르트와 레오폴드)",
+                exam: "2026학년도 6월 고2",
+                number: "18번",
+                points: "2.5점",
+                pageRef: "2026학년도 6월 고2 문제지 5쪽 18번",
+                topic: "기계론적 자연관(데카르트)과 대지 윤리(레오폴드)의 상호 비판",
+                stem: "(가)의 갑, 을 사상가들의 입장에서 서로에게 제기할 수 있는 비판을 (나) 그림으로 표현할 때, A, B에 해당하는 내용으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>갑(데카르트):</strong> 사유 능력이 없는 동물은 정교하게 설계된 기계와 다를 바 없다.</div>
+                        <div><strong>을(레오폴드):</strong> 대지 윤리는 생명 공동체의 범위를 토양, 물, 식물, 동물, 즉 대지를 포함하도록 확장한다.</div>
+                        <div class="text-xs text-slate-600">* A: 갑이 을에게 제기할 비판 / B: 을이 갑에게 제기할 비판</div>
+                    </div>
+                `,
+                choices: [
+                    "① A: 자연은 인간의 이익과 무관하게 존중받아야 함을 간과한다.",
+                    "② A: 자연의 모든 존재는 도덕적 지위를 지니고 있음을 간과한다.",
+                    "③ B: 개별 생명체의 보존이 생태계의 안정보다 중요함을 간과한다.",
+                    "④ B: 생태계의 온전함은 자연에 대한 인간의 지배로 실현됨을 간과한다.",
+                    "⑤ B: 인간은 생명 공동체 그 자체에 대한 의무를 가져야 함을 간과한다."
+                ],
+                answer: 5,
+                explanation: "생태 중심주의자 을(레오폴드)이 인간 중심주의자 갑(데카르트)에게 제기할 비판(B)으로는 '인간은 생명 공동체 그 자체에 대한 도덕적 의무를 가져야 함을 간과한다(⑤)'가 가장 적절합니다."
+            },
+            {
+                id: "26-06-2-22",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2026학년도 6월 고2",
+                number: "22번",
+                points: "2점",
+                pageRef: "2026학년도 6월 고2 문제지 6쪽 22번",
+                topic: "세계의 주요 자연 경관 (갯벌, 간헐천, 탑 카르스트, 피오르)",
+                stem: "다음 자료는 각국의 자연 경관을 나타낸 것이다. 밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• 한국 서해안: <u>㉠ 갯벌</u></div>
+                        <div>• 미국 옐로스톤: <u>㉡ 화산 지대</u>의 간헐천</div>
+                        <div>• 중국 남부: 석회암 용식 <u>㉢ 탑 카르스트</u></div>
+                        <div>• 칠레 남부: 빙하 침식 U자곡 <u>㉣ 피오르</u></div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠은 염전이나 양식장으로 이용되기도 한다.<br>
+                    ㄴ. ㉡은 지열 발전에 유리한 자연적 조건을 갖추고 있다.<br>
+                    ㄷ. ㉢은 습윤한 기후 환경보다 건조한 기후 환경에서 잘 발달한다.<br>
+                    ㄹ. ㉠과 ㉣은 모두 빙하의 퇴적 작용으로 형성된다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 1,
+                explanation: "ㄱ(갯벌의 이용)과 ㄴ(화산 지대의 지열 발전)이 옳습니다."
+            },
+            {
+                id: "26-06-2-24",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 노력",
+                exam: "2026학년도 6월 고2",
+                number: "24번",
+                points: "1.5점",
+                pageRef: "2026학년도 6월 고2 문제지 6쪽 24번",
+                topic: "환경 관련 국제 협약 (제네바 협약, 몬트리올 의정서, 파리 협정)",
+                stem: "표는 환경 관련 국제 협약이 이루어진 도시와 협약의 주요 내용을 정리한 것이다. 이에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <table class="w-full text-xs border-collapse border border-slate-600">
+                        <tr class="bg-slate-100 font-bold text-center">
+                            <td class="border border-slate-600 p-1 w-24">도시</td>
+                            <td class="border border-slate-600 p-1">협약의 주요 내용</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 text-center font-semibold">제네바</td>
+                            <td class="border border-slate-600 p-1">1979년 체결, <u>㉠ 산성비</u> 문제 해결 목적</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 text-center font-semibold">(가) 몬트리올</td>
+                            <td class="border border-slate-600 p-1">1987년 체결, <u>㉡ 오존층 파괴</u> 물질 사용 규제</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 text-center font-semibold">(나) 파리</td>
+                            <td class="border border-slate-600 p-1">2015년 체결, <u>㉢ 지구 온난화 해결</u> (교토 의정서 대체)</td>
+                        </tr>
+                    </table>
+                `,
+                bogi: `
+                    ㄱ. (가)와 (나)는 각각 속해 있는 국가의 수도이다.<br>
+                    ㄴ. ㉠으로 인해 건축물의 부식 문제가 발생하기도 한다.<br>
+                    ㄷ. ㉡은 피부암, 백내장 발병률 증가에 영향을 미친다.<br>
+                    ㄹ. 기업은 ㉢을 위해 환경 보전에 관한 법률을 제정한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 3,
+                explanation: "ㄴ(산성비로 인한 건축물 부식)과 ㄷ(오존층 파괴로 인한 피부암·백내장 증가)이 옳습니다."
+            },
+            {
+                id: "26-09-2-03",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2026학년도 9월 고2",
+                number: "3번",
+                points: "2.5점",
+                pageRef: "2026학년도 9월 고2 문제지 1쪽 3번",
+                topic: "서안 해양성(가), 온대 계절풍(나), 지중해성(다) 기후 비교",
+                stem: "표는 지도에 표시된 세 지역의 기후 특성을 나타낸 것이다. (가)~(다) 지역에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <table class="w-full text-xs text-center border-collapse border border-slate-600">
+                        <tr class="bg-slate-100 font-bold">
+                            <td class="border border-slate-600 p-1">지역</td>
+                            <td class="border border-slate-600 p-1">1월 평균 기온 차이(℃)</td>
+                            <td class="border border-slate-600 p-1">7월 강수량 차이(mm)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">(가) 런던</td>
+                            <td class="border border-slate-600 p-1">0.9</td>
+                            <td class="border border-slate-600 p-1">-84.2</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">(나) 동아시아</td>
+                            <td class="border border-slate-600 p-1">-6.3</td>
+                            <td class="border border-slate-600 p-1">206.3</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">(다) 지중해 연안</td>
+                            <td class="border border-slate-600 p-1">5.3</td>
+                            <td class="border border-slate-600 p-1">-122.0</td>
+                        </tr>
+                    </table>
+                `,
+                choices: [
+                    "① (가)에서는 계절풍의 영향으로 벼농사가 발달하였다.",
+                    "② (나)에서는 지면의 열을 피하기 위한 고상 가옥을 볼 수 있다.",
+                    "③ (다)에서는 올리브 등을 재배하는 수목 농업이 활발하다.",
+                    "④ (가)는 (나)보다 기온의 연교차가 크다.",
+                    "⑤ (나)는 (다)보다 겨울 강수 집중률이 높다."
+                ],
+                answer: 3,
+                explanation: "③ 지중해성 기후 지역인 (다)에서는 올리브, 포도 등을 재배하는 수목 농업이 활발합니다."
+            },
+            {
+                id: "26-09-2-06",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 주체별 노력 (RE100)",
+                exam: "2026학년도 9월 고2",
+                number: "6번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 2쪽 6번",
+                topic: "기후 변화 대응과 탄소 절감을 위한 정부(가), 기업(나), 시민 단체(다)의 역할",
+                stem: "다음 글의 (가)~(다)에 해당하는 행위 주체로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        지구 온난화로 인한 기후 변화가 인류의 생존을 위협하고 있다. <strong>(가)</strong>는 온실가스 배출 규제를 강화하고 조세 감면 등의 재정적 지원을 병행한다. 생산 활동의 주체인 <strong>(나)</strong>는 사용 전력의 100%를 재생 에너지로 전환하려는 RE100에 자율적으로 참여하고 있다. 한편 <strong>(다)</strong>는 기후 변화 대응 정책들이 제대로 이행되고 있는지 감시하고 비판하며 캠페인을 전개한다.
+                    </div>
+                `,
+                choices: [
+                    "① (가) 정부 - (나) 기업 - (다) 시민 단체",
+                    "② (가) 정부 - (나) 시민 단체 - (다) 기업",
+                    "③ (가) 기업 - (나) 정부 - (다) 시민 단체",
+                    "④ (가) 기업 - (나) 시민 단체 - (다) 정부",
+                    "⑤ (가) 시민 단체 - (나) 기업 - (다) 정부"
+                ],
+                answer: 1,
+                explanation: "규제 강화 및 조세 감면은 정부(가), RE100 참여 생산 주체는 기업(나), 정책 감시와 캠페인 전개는 시민 단체(다)의 역할입니다."
+            },
+            {
+                id: "26-09-2-08",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-2. 자연재해와 인간 생활",
+                exam: "2026학년도 9월 고2",
+                number: "8번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 2쪽 8번",
+                topic: "자연재해(태풍, 대설) 국민 행동 요령과 특징",
+                stem: "자료에 대한 설명으로 옳은 것만을 <보기>에서 있는 대로 고른 것은? (단, A, B는 각각 대설, 태풍 중 하나임.)",
+                boxContent: `
+                    <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>[A: 태풍]</strong> 수해 위험 지역 모래주머니·물막이판 대비, 강풍 대비 창문 교체</div>
+                        <div><strong>[B: 대설]</strong> 도로 염화칼슘·모래 살포, 지붕 위 눈 치우기</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. A는 저위도 열대 해상에서 주로 발생한다.<br>
+                    ㄴ. A는 B보다 여름철 발생 빈도가 높다.<br>
+                    ㄷ. A는 빙판길 교통사고, B는 해안 저지대 침수를 유발한다.<br>
+                    ㄹ. ㉠(자동 음성 통보, 재해 문자 전광판)은 국민의 안전권을 보장하기 위한 수단 중 하나이다.
+                `,
+                choices: ["① ㄱ, ㄷ", "② ㄴ, ㄷ", "③ ㄴ, ㄹ", "④ ㄱ, ㄴ, ㄹ", "⑤ ㄱ, ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄱ, ㄴ, ㄹ 모두 옳습니다. ㄷ은 A와 B의 설명이 서로 바뀌었습니다."
+            },
+            {
+                id: "26-09-2-25",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결과 대지 윤리 (열대림 보전 vs 개발)",
+                exam: "2026학년도 9월 고2",
+                number: "25번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 6쪽 25번",
+                topic: "열대림 대규모 벌목과 산업 단지 개발 갈등에 대한 레오폴드의 조언",
+                stem: "다음을 주장한 사상가의 입장에서 <문제 상황> 속 A에게 제시할 조언으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-2 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>사상가(레오폴드):</strong> 흙, 물, 식물, 동물, 인간을 포함하는 생명 공동체는 생명적 성질을 지닌다. 우리는 대지 이용을 오직 경제적 관점으로만 생각하지 말아야 한다.</div>
+                        <div><strong>&lt;문제 상황&gt;</strong> A는 열대림 지역을 관리하는 공무원이다. 산업 단지 조성 시 경제 성장이 기대되지만 대규모 벌목으로 생물 다양성이 훼손될 우려가 크다.</div>
+                    </div>
+                `,
+                choices: [
+                    "① 인간은 자연보다 우월한 존재임을 명심해야 합니다.",
+                    "② 생명 공동체 그 자체를 도덕적으로 고려해야 합니다.",
+                    "③ 어떠한 경우에도 자연을 자원으로 활용해서는 안 됩니다.",
+                    "④ 생태계의 안정성보다 개발로 얻을 이익을 중시해야 합니다.",
+                    "⑤ 인간의 소유물인 열대림 보존을 위해 개발을 자제해야 합니다."
+                ],
+                answer: 2,
+                explanation: "레오폴드는 생명 공동체 그 자체를 도덕적으로 고려할 것(②)을 강조합니다."
+            },
+            {
+                id: "26-10-2-01",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제와 자연관 (도로 건설 노선 갈등)",
+                exam: "2026학년도 10월 고2",
+                number: "1번",
+                points: "1.5점",
+                pageRef: "2026학년도 10월 고2 문제지 1쪽 1번",
+                topic: "숲 관통 도로 건설 노선 갈등에 대한 레오폴드(갑)와 데카르트(을)의 조언",
+                stem: "인간과 자연의 관계에 대한 사상가 갑, 을의 입장에서 <문제 상황>의 A에게 해 줄 수 있는 조언으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>갑(레오폴드):</strong> 생명 공동체의 통합성, 안정성, 아름다움의 보전에 이바지하면 그것은 옳고, 그렇지 않으면 그르다.</div>
+                        <div><strong>을(데카르트):</strong> 인간은 자연의 주인이자 소유자가 될 수 있다. 자연은 단순한 물질에 불과하며 기계와 같다.</div>
+                        <div><strong>&lt;문제 상황&gt;</strong> 도로 건설 담당자 A는 비용을 줄이지만 숲을 훼손하는 관통 노선과, 비용은 증가하지만 숲을 피하는 우회 노선을 검토 중이다.</div>
+                    </div>
+                `,
+                choices: [
+                    "① 갑: 생태계 보전에 인간의 도덕적 책임이 있음을 고려하세요.",
+                    "② 갑: 무생물은 도덕적 고려의 대상이 될 수 없음을 고려하세요.",
+                    "③ 을: 인간이 자연을 통제하는 것은 불가능함을 고려하세요.",
+                    "④ 을: 인간의 편익이 아닌 숲의 보존을 우선시해야 함을 고려하세요.",
+                    "⑤ 갑과 을: 자연은 경제적 자원으로 사용될 수 없음을 고려하세요."
+                ],
+                answer: 1,
+                explanation: "① 생태 중심주의자 갑(레오폴드)은 생태계 보전에 인간의 도덕적 책임이 있음을 강조합니다."
+            },
+            {
+                id: "26-10-2-03",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-1. 자연환경과 인간 생활",
+                exam: "2026학년도 10월 고2",
+                number: "3번",
+                points: "2.5점",
+                pageRef: "2026학년도 10월 고2 문제지 1쪽 3번",
+                topic: "사막(가), 열대 우림(나), 계절풍(다) 지역의 기후 그래프 분석",
+                stem: "그래프는 지도에 표시된 세 지역의 시기별 평균 기온과 강수량을 나타낸 것이다. (가)~(다) 지역에 대한 설명으로 옳은 것은? (단, A, B는 각각 1월, 7월 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 아라비아반도 사막:</strong> A(7월) 약 30℃, B(1월) 약 11℃, 연중 강수량 극소</div>
+                        <div>• <strong>(나) 인도네시아 적도 열대 우림:</strong> A(7월)와 B(1월) 모두 기온 약 27℃, 강수량 200mm 이상</div>
+                        <div>• <strong>(다) 동아시아/동남아 계절풍:</strong> A(1월) 기온 약 7℃·건조, B(7월) 기온 약 23℃·강수 집중</div>
+                    </div>
+                `,
+                choices: [
+                    "① (가) 지역에서는 플랜테이션 농업이 발달한다.",
+                    "② (나) 지역은 연 강수량보다 연 증발량이 많다.",
+                    "③ (나)는 (가) 지역보다 기온의 일교차가 크다.",
+                    "④ (다)는 (나) 지역보다 저위도에 위치한다.",
+                    "⑤ (다) 지역에서는 A보다 B에 벼농사가 활발하게 이루어진다."
+                ],
+                answer: 5,
+                explanation: "⑤ 계절풍 기후 지역인 (다)에서는 고온 다습한 여름철인 B(7월)에 벼농사가 활발하게 이루어집니다."
+            },
+            {
+                id: "26-10-2-25",
+                unitCode: "3단원",
+                unitName: "3단원. 자연환경과 인간",
+                subUnit: "3-3. 환경 문제 해결을 위한 국제 협약 (교토 의정서와 파리 협정)",
+                exam: "2026학년도 10월 고2",
+                number: "25번",
+                points: "1.5점",
+                pageRef: "2026학년도 10월 고2 문제지 6쪽 25번",
+                topic: "교토 의정서(A)와 파리 협정(B), 정부와 생태 시민의 역할",
+                stem: "자료에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        1992년 유엔 기후 변화 협약은 선진국의 온실가스 감축 목표를 규정한 1997년의 <strong>A(교토 의정서)</strong>로 구체화되었다. 2015년에는 이를 대체하여 지구 평균 기온 상승을 1.5℃ 이내로 제한하고자 노력하기로 한 <strong>B(파리 협정)</strong>가 채택되었다. <u>㉠ 정부</u>, 기업, <u>㉡ 생태 시민</u> 등 모든 주체가 연대할 때 에너지 전환을 실천할 수 있다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. A는 몬트리올 의정서이다.<br>
+                    ㄴ. A와 달리 B는 개발 도상국에게도 온실가스 감축 의무를 부여하였다.<br>
+                    ㄷ. ㉠은 개발 사업이 환경에 미치는 영향을 예측하고 평가하는 법(환경 영향 평가 제도)을 제정하여 시행한다.<br>
+                    ㄹ. ㉡은 상품의 생산과 소비가 환경에 미치는 영향을 중시한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ. 교토 의정서(A)와 달리 파리 협정(B)은 선진국뿐만 아니라 개발도상국까지 모든 당사국에 온실가스 감축 의무를 부여했습니다. ㄹ. 생태 시민(㉡)은 상품의 생산과 소비가 환경에 미치는 영향을 중시합니다. (법률 제정은 국회가 수행합니다.)"
+            },
+
+            // ================= 6단원 =================
+            {
+                id: "25-03-1-05",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-3. 분단 극복과 평화 통일 (독일 베를린 장벽)",
+                exam: "2025학년도 3월 고1",
+                number: "5번",
+                points: "2점",
+                pageRef: "2025학년도 3월 고1 문제지 1쪽 5번",
+                topic: "독일 베를린 장벽과 평화적 통일의 시사점",
+                stem: "다음 자료에 대한 설명으로 가장 적절한 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        국가 <strong>A(독일)</strong>의 수도에 도착해서 베를린 장벽을 보러 갔다. 베를린을 동서로 갈라놓았던 장벽은 이제 평화를 상징하는 예술 작품이 되었다. 놀랍게도 이 장벽은 서울에도 있다고 한다. 분단 국가인 우리나라의 통일을 기원하는 의미에서 A가 장벽의 일부를 기증한 것이다. A는 이념적 차이를 극복하고 평화적인 방식으로 통일을 이루었다. 국내적으로는 <u>㉠ 사회 통합을 위한 다양한 노력</u>을 기울였다.
+                    </div>
+                `,
+                choices: [
+                    "① A는 20세기에 극심한 종교 갈등으로 인해 분단되었다.",
+                    "② A는 경도상 우리나라의 동쪽에 위치하여 표준시가 빠르다.",
+                    "③ ㉠에는 주변국의 우려를 불식하기 위한 휴전 협정 체결이 있다.",
+                    "④ 분단 극복을 위해 이념적 갈등을 확대하는 것이 필요하다.",
+                    "⑤ ㉠에는 이질화 문제 해소를 위한 교류 협력의 활성화가 있다."
+                ],
+                answer: 5,
+                explanation: "A는 독일입니다. ⑤ 분단 기간 동안 심화된 사회·문화적 이질화를 해소하기 위해 교류 협력을 활성화하는 것이 사회 통합의 노력(㉠)에 해당합니다."
+            },
+            {
+                id: "25-03-1-08",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 영역과 독도의 중요성 (한국지리 연계)",
+                exam: "2025학년도 3월 고1",
+                number: "8번",
+                points: "2점",
+                pageRef: "2025학년도 3월 고1 문제지 2쪽 8번",
+                topic: "독도의 지리적 위치와 자연·인문 환경 특징",
+                stem: "다음 글은 우리나라의 어느 지역에 대한 설문 결과를 나타낸 것이다. (가)에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        <strong>(가)</strong>의 날인 10월 25일을 맞아 국민 5천여 명을 대상으로 '<strong>(가)</strong>(이)라고 하면 가장 먼저 생각나는 것'에 대한 설문을 실시하였다. 그 결과 1위는 '지켜야 할 민족자존의 섬'이라는 응답이었으며, '일본의 지속적인 침탈 야욕', '동해의 외로운 섬', '우리나라에서 가장 먼저 해가 뜨는 곳' 등이 뒤를 이었다.
+                    </div>
+                `,
+                choices: [
+                    "① 우리나라에서 가장 동쪽에 위치한다.",
+                    "② 영해 설정 시 통상 기선이 적용된다.",
+                    "③ 종합 해양 과학 기지가 건설되어 있다.",
+                    "④ 섬 전체가 천연 보호 구역으로 지정되어 있다.",
+                    "⑤ 주변 바다에 난류와 한류가 만나는 해역이 있다."
+                ],
+                answer: 3,
+                explanation: "(가)는 독도입니다. ③ 종합 해양 과학 기지가 건설되어 있는 곳은 이어도, 가거초, 소청초이며 독도에는 건설되어 있지 않습니다."
+            },
+            {
+                id: "25-06-1-15",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권",
+                exam: "2025학년도 6월 고1",
+                number: "15번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 4쪽 15번",
+                topic: "라틴 아메리카 문화권(타코, 에스파냐어·포르투갈어, 가톨릭교)",
+                stem: "다음은 학교 급식 안내문의 일부이다. (가) 문화권을 지도의 A~E에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>• 오늘의 메뉴:</strong> 옥수수 가루로 만든 토르티야에 고기와 채소를 싸서 먹는 타코</div>
+                        <div><strong>• (가) 문화권의 특징:</strong> 에스파냐어와 포르투갈어 사용자가 많고 주로 가톨릭교를 믿으며, 혼혈인이 많아 다양한 문화가 나타난다.</div>
+                        <div class="text-xs text-slate-600">[지도] A: 건조 문화권 / B: 아프리카 / C: 동아시아 / D: 오세아니아 / E: 라틴 아메리카</div>
+                    </div>
+                `,
+                choices: ["① A", "② B", "③ C", "④ D", "⑤ E"],
+                answer: 5,
+                explanation: "라틴 아메리카 문화권은 지도의 E입니다."
+            },
+            {
+                id: "25-06-1-16",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권 (종교 경관)",
+                exam: "2025학년도 6월 고1",
+                number: "16번",
+                points: "1.5점",
+                pageRef: "2025학년도 6월 고1 문제지 4쪽 16번",
+                topic: "불교의 성지 부다가야(보리수, 마하보디 사원, 불상과 탑)",
+                stem: "다음은 인터뷰 장면의 일부이다. (가)에 들어갈 종교에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>기자:</strong> 이곳 부다가야는 <strong>(가)</strong>의 주요 성지 중 한 곳인데, 어떤 장소가 기억에 남습니까?</div>
+                        <div><strong>선수:</strong> 보리수가 있는 마하보디 사원의 불상과 탑, 창시자가 고행한 동굴이 기억에 남습니다.</div>
+                    </div>
+                `,
+                choices: [
+                    "① 예수를 구원자로 믿는다.",
+                    "② 세계에서 신자 수가 가장 많다.",
+                    "③ 깨달음을 통한 해탈과 열반을 강조한다.",
+                    "④ 메카로의 성지 순례를 종교적 의무로 한다.",
+                    "⑤ 라마단 기간 중 해가 떠 있는 시간에는 금식한다."
+                ],
+                answer: 3,
+                explanation: "인도 부다가야는 불교(가)의 성지이며, 불교는 깨달음을 통한 해탈과 열반을 강조합니다."
+            },
+            {
+                id: "25-06-1-19",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-2. 문화 변동의 요인과 양상",
+                exam: "2025학년도 6월 고1",
+                number: "19번",
+                points: "2.5점",
+                pageRef: "2025학년도 6월 고1 문제지 5쪽 19번",
+                topic: "베트남 여행 일기 (쯔놈 문자 자극 전파, 쌀국수 분짜)",
+                stem: "다음은 A국을 여행하며 쓴 일기이다. 밑줄 친 ㉠~㉤에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>■ 1일차:</strong> <u>㉠ '쯔놈(chu nom)' 문자</u>는 A국이 도입된 <u>㉡ 한자</u>에서 얻은 아이디어를 활용하여 개발한 문자 체계임.</div>
+                        <div><strong>■ 2일차:</strong> <u>㉢ 쌀</u>로 만든 국수 '분짜'를 먹고 <u>㉣ 전통 의복</u>을 빌려 입음. <u>㉤ 현지어</u> 사용자들을 만남.</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 자극 전파의 사례이다.",
+                    "② ㉡은 매개체를 통해 전파된 문화 요소이다.",
+                    "③ A국의 기후는 ㉢을 생산하기에 불리하다.",
+                    "④ ㉣은 추위를 견디기 위해 주요 소재로 털가죽을 이용한다.",
+                    "⑤ ㉤으로 주로 영어가 사용된다."
+                ],
+                answer: 1,
+                explanation: "① 한자에서 아이디어를 얻어 새로운 문자인 쯔놈(㉠)을 발명한 것은 자극 전파의 대표적 사례입니다."
+            },
+            {
+                id: "25-06-1-24",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권과 문화 이해 태도",
+                exam: "2025학년도 6월 고1",
+                number: "24번",
+                points: "2점",
+                pageRef: "2025학년도 6월 고1 문제지 6쪽 24번",
+                topic: "북극 문화권 네네츠족의 순록 유목 생활과 문화 상대주의",
+                stem: "다음 자료에 대한 설명으로 옳은 것만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        러시아의 네네츠족은 <u>㉠ 북극 문화권</u>에서 전통적으로 사냥, 어로, 유목 생활을 하는 민족이다. 그들은 <u>㉡ 순록을 잡아 생고기와 피를 섭취하고, 가죽으로 집과 옷을 만들어 생활</u>한다. 어떤 사람들은 <u>㉢ 자신의 문화를 우월하다고 여기며</u> 비난하기도 한다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠은 기온이 낮아 인간이 거주하기에 불리하다.<br>
+                    ㄴ. 산업화·도시화로 인해 ㉡의 모습은 확산되고 있다.<br>
+                    ㄷ. ㉢과 같은 태도는 국수주의로 변질될 수 있다는 비판을 받는다.<br>
+                    ㄹ. (가)에는 '자문화보다 타문화를 동경'이 들어갈 수 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ(한대 기후의 거주 불리성)과 ㄷ(자문화 중심주의의 국수주의 변질 우려)이 옳습니다."
+            },
+            {
+                id: "25-09-1-05",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권 (종교 분포와 특징)",
+                exam: "2025학년도 9월 고1",
+                number: "5번",
+                points: "2.5점",
+                pageRef: "2025학년도 9월 고1 문제지 2쪽 5번",
+                topic: "말레이시아의 다종교 공휴일 (이슬람교, 불교, 힌두교, 크리스트교)",
+                stem: "다음 자료에 대한 설명으로 옳은 것은? (단, A~D는 각각 불교, 이슬람교, 크리스트교, 힌두교 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>믈라카 해협 교통의 요지인 <u>㉠ 말레이시아에는 여러 민족과 종교가 유입되어 공존</u>하고 있다.</div>
+                        <div>• <strong>A (이슬람교):</strong> Hari Raya Puasa (라마단이 끝나는 날)</div>
+                        <div>• <strong>B (불교):</strong> Wesak Day (창시자의 탄생, 깨달음, 열반 기념일)</div>
+                        <div>• <strong>C (힌두교):</strong> Deepavali ('빛의 축제', 여러 신들에게 기도)</div>
+                        <div>• <strong>D (크리스트교):</strong> Christmas (구원자로 믿는 이의 탄생 기념일)</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 내재적 요인에 의한 문화 변동의 사례이다.",
+                    "② A의 신도들은 종교 의식으로 갠지스강에서 목욕을 한다.",
+                    "③ B의 여성 신도들은 히잡이나 차도르 등을 착용한다.",
+                    "④ A는 소고기, C는 돼지고기를 금기시한다.",
+                    "⑤ 유럽 문화권에서는 D가 B보다 신자 수가 많다."
+                ],
+                answer: 5,
+                explanation: "⑤ 유럽 문화권에서는 크리스트교(D)가 불교(B)보다 신자 수가 훨씬 많습니다."
+            },
+            {
+                id: "25-09-1-12",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-3. 다문화 사회를 바라보는 관점",
+                exam: "2025학년도 9월 고1",
+                number: "12번",
+                points: "2점",
+                pageRef: "2025학년도 9월 고1 문제지 3쪽 12번",
+                topic: "동화주의(용광로 이론, 가)와 다문화주의(샐러드 볼 이론, 나) 비교",
+                stem: "(가)의 관점에 비해 (나)의 관점이 갖는 상대적 특징을 그림의 ㉠~㉤에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>(가) 용광로 이론(동화주의):</strong> 이민자들을 주류 문화로 동화시켜 단일한 문화를 만들어야 한다.</div>
+                        <div><strong>(나) 샐러드 볼 이론(다문화주의):</strong> 이민자들의 정체성을 인정하고 문화의 다양성을 존중해야 한다.</div>
+                        <div>• X(문화 획일성 강조): <strong>낮음</strong> / • Y(이민자 고유문화 존중): <strong>높음</strong> / • Z(타문화 관용 태도): <strong>높음</strong> → 꼭짓점 <strong>㉡</strong></div>
+                    </div>
+                `,
+                choices: ["① ㉠", "② ㉡", "③ ㉢", "④ ㉣", "⑤ ㉤"],
+                answer: 2,
+                explanation: "샐러드 볼 이론(나)은 용광로 이론(가)에 비해 문화 획일성(X)은 낮고, 고유문화 존중(Y)과 관용적 태도(Z)는 높으므로 ㉡입니다."
+            },
+            {
+                id: "25-10-1-02",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-2. 문화 변동의 요인과 양상 (음식 문화와 기후)",
+                exam: "2025학년도 10월 고1",
+                number: "2번",
+                points: "2점",
+                pageRef: "2025학년도 10월 고1 문제지 1쪽 2번",
+                topic: "베트남 쌀국수 퍼(문화 병존)와 남부 유럽 들기름파스타(문화 융합)",
+                stem: "그림은 요리사가 자신이 만든 요리를 소개하는 장면이다. 이에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>[요리사 1]</strong> <u>㉠ 동남아시아</u> 베트남의 퍼(phở)가 우리나라의 잔치국수, 비빔국수 등과 함께 대중적인 국수로 자리 잡았습니다.</div>
+                        <div><strong>[요리사 2]</strong> <u>㉡ 남부 유럽</u>의 파스타에 우리나라 전통 식재료인 들기름을 결합하여 들기름파스타가 개발되었습니다.</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠에서는 건조함과 추위를 잘 견디는 작물인 밀을 주로 재배한다.",
+                    "② ㉡에서는 계절풍의 영향으로 벼농사가 활발하게 이루어진다.",
+                    "③ 퍼(phở)가 우리나라에 전해진 것은 간접 전파의 사례이다.",
+                    "④ 우리나라에서 퍼(phở)가 대중화된 것은 문화 병존의 사례이다.",
+                    "⑤ 우리나라에서 들기름파스타가 유행하는 것은 문화 동화의 사례이다."
+                ],
+                answer: 4,
+                explanation: "④ 외래 음식인 퍼가 우리 전통 국수와 나란히 공존하며 소비되는 것은 문화 병존의 사례입니다."
+            },
+            {
+                id: "25-10-1-09",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권 (종교 갈등과 소수자)",
+                exam: "2025학년도 10월 고1",
+                number: "9번",
+                points: "2.5점",
+                pageRef: "2025학년도 10월 고1 문제지 2쪽 9번",
+                topic: "동남·남부 아시아의 종교 분포(이슬람교, 불교)와 로힝야족 난민",
+                stem: "다음 자료는 사회적 소수자에 관한 사례이다. 이에 대한 설명으로 옳은 것은? (단, A, B는 각각 불교, 이슬람교 중 하나임.)",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        대다수가 <strong>A(이슬람교)</strong>를 믿는 로힝야족은 주로 <strong>B(불교)</strong>를 믿는 미얀마에서 종교적·역사적 갈등을 겪고 차별을 받아 왔다. 로힝야족 여성 갑은 방글라데시 난민촌으로 이주하여 <u>㉠ 주거권, 안전권, 환경권</u>을 보장받지 못하고 있으며 여성에 대한 차별도 겪고 있다.
+                    </div>
+                `,
+                choices: [
+                    "① A의 대표적인 종교 경관은 탑과 불상이다.",
+                    "② B는 쿠란의 율법을 중시한다.",
+                    "③ ㉠은 근대 시민 혁명 이전부터 강조된 권리이다.",
+                    "④ 한 개인이 여러 사회적 소수자 집단에 중첩되어 속할 수 있음을 보여 준다.",
+                    "⑤ 사회적 소수자는 선천적 요인이 아닌 후천적 요인에 의해 결정됨을 보여 준다."
+                ],
+                answer: 4,
+                explanation: "④ 갑은 난민이면서 동시에 여성으로서 차별받는 다중적·중첩적 사회적 소수자입니다."
+            },
+            {
+                id: "25-10-1-12",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권",
+                exam: "2025학년도 10월 고1",
+                number: "12번",
+                points: "2점",
+                pageRef: "2025학년도 10월 고1 문제지 3쪽 12번",
+                topic: "건조 문화권(이슬람 모스크)과 유럽 문화권(크리스트교 성당·교회) 비교",
+                stem: "위 자료(12~13번 공통 지문)에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>• (가) 도시:</strong> 아랍어 사용, <strong>A(이슬람교)</strong>의 대표적 종교 경관인 둥근 지붕의 모스크</div>
+                        <div><strong>• (나) 도시:</strong> 영어 사용, <strong>B(크리스트교)</strong>의 대표적 종교 경관인 성당과 교회</div>
+                    </div>
+                `,
+                choices: [
+                    "① A는 돼지고기를 금기시한다.",
+                    "② 오세아니아 문화권에는 B보다 A의 신자 수가 많다.",
+                    "③ (가)는 유럽 문화권, (나)는 건조 문화권에 속한다.",
+                    "④ (가)는 (나)보다 적도와의 최단 거리가 길다.",
+                    "⑤ (가)가 속한 국가는 (나)가 속한 국가보다 산업화 시작 시기가 이르다."
+                ],
+                answer: 1,
+                explanation: "① 이슬람교(A)는 돼지고기를 금기시합니다."
+            },
+            {
+                id: "26-03-2-03",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권",
+                exam: "2026학년도 3월 고2",
+                number: "3번",
+                points: "1.5점",
+                pageRef: "2026학년도 3월 고2 문제지 1쪽 3번",
+                topic: "라틴 아메리카(멕시코 타코)와 유럽(이탈리아 파스타) 문화권 특징",
+                stem: "다음은 인터넷 방송의 한 장면이다. ㉠~㉤에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div class="font-bold">&lt;세계 문화 키친: 라틴 아메리카 편&gt;</div>
+                        <div>○ 요리: <u>㉠ 멕시코</u>의 타코 (<u>㉡ 돼지고기</u>, <u>㉢ 옥수수</u> 토르티야) / ○ 다음 시간: <u>㉣ 유럽</u> 편 - <u>㉤ 이탈리아</u>의 파스타</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠의 주민들이 가장 많이 사용하는 언어는 영어이다.",
+                    "② ㉡은 예수를 구원자로 믿는 종교에서 금기시한다.",
+                    "③ ㉢은 건조 문화권에서 주식(主食)으로 하는 곡물이다.",
+                    "④ ㉣에는 산업 혁명이 최초로 시작된 국가가 있다.",
+                    "⑤ ㉤에서 바이마르 헌법이 제정되었다."
+                ],
+                answer: 4,
+                explanation: "④ 유럽(㉣)에는 산업 혁명이 최초로 시작된 영국이 위치해 있습니다."
+            },
+            {
+                id: "26-03-2-04",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-3. 동아시아 역사 갈등과 영유권 분쟁 (센카쿠 열도 등)",
+                exam: "2026학년도 3월 고2",
+                number: "4번",
+                points: "1.5점",
+                pageRef: "2026학년도 3월 고2 문제지 1쪽 4번",
+                topic: "동아시아 역사 인식 갈등 및 센카쿠 열도(댜오위다오) 영유권 문제 해결 방안",
+                stem: "㉠에 들어갈 적절한 내용만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        <strong>토의 주제: 동아시아 역사 갈등, 이대로 괜찮은가?</strong><br>
+                        동아시아의 교사와 학자들이 상호 교류하여 공동의 역사 교과서를 개발해야 한다고 생각합니다. 역사 갈등을 평화적인 방식으로 해결하기 위해서 <u>&nbsp;&nbsp;&nbsp;&nbsp;㉠&nbsp;&nbsp;&nbsp;&nbsp;</u>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. 한국의 학자들은 동북 공정의 결과를 전면 수용해야 합니다.<br>
+                    ㄴ. 일본은 과거의 침략에 대해 반성하는 역사 인식을 지녀야 합니다.<br>
+                    ㄷ. 각국은 조선 통신사와 같은 문화 교류의 사례를 청소년에게 교육할 필요가 있습니다.<br>
+                    ㄹ. 일본과 중국은 센카쿠 열도(댜오위다오)에 대한 영유권을 국력의 우위로 결정해야 합니다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 3,
+                explanation: "ㄴ(과거 침략에 대한 반성)과 ㄷ(평화적 문화 교류 사례 교육)이 갈등 해결을 위한 바람직한 자세입니다."
+            },
+            {
+                id: "26-03-2-05",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-2. 문화 변동의 요인과 양상",
+                exam: "2026학년도 3월 고2",
+                number: "5번",
+                points: "1.5점",
+                pageRef: "2026학년도 3월 고2 문제지 2쪽 5번",
+                topic: "인도 간다라 양식 불상(문화 융합)과 말레이시아 믈라카(문화 병존)",
+                stem: "밑줄 친 ㉠~㉤에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• 인도 뉴델리 박물관에서 <u>㉠ 간다라 양식의 불상</u>(불교 문화 + 헬레니즘 조각 양식 결합)을 보았다.</div>
+                        <div>• 말레이시아 믈라카에는 다양한 <u>㉡ 종교</u>(불교, 힌두교, 이슬람교, <u>㉢ 크리스트교</u>)가 <u>㉣ 유입</u>되어 <u>㉤ 각 종교가 고유의 정체성과 건축적 전통을 잃지 않고 함께 존재</u>하고 있다.</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 문화 융합의 사례이다.",
+                    "② 언어는 종교와 달리 ㉡에 해당하지 않는다.",
+                    "③ ㉢을 믿는 사람들은 쿠란의 율법에 따라 생활한다.",
+                    "④ ㉣은 자극 전파에 해당한다.",
+                    "⑤ ㉤은 자기 문화가 외래문화로 대체된 결과이다."
+                ],
+                answer: 1,
+                explanation: "① 간다라 양식 불상은 문화 융합의 대표적 사례입니다."
+            },
+            {
+                id: "26-06-2-05",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권 (종교와 음식 문화)",
+                exam: "2026학년도 6월 고2",
+                number: "5번",
+                points: "1.5점",
+                pageRef: "2026학년도 6월 고2 문제지 2쪽 5번",
+                topic: "불교(유미죽), 크리스트교(부활절 달걀), 이슬람교(라마단 대추야자)",
+                stem: "다음 자료는 행사 기획서의 일부이다. 이에 대한 설명으로 옳은 것은? (단, A~C는 각각 불교, 이슬람교, 크리스트교 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>◎ 행사 목적:</strong> <u>㉠ 문화 상대주의적 태도</u> 함양</div>
+                        <div>• <strong>A (불교 - 유미죽)</strong> / • <strong>B (크리스트교 - 달걀)</strong> / • <strong>C (이슬람교 - 대추야자)</strong></div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 문화의 우열을 평가할 수 있다고 본다.",
+                    "② A의 대표적 경관은 탑과 불상이다.",
+                    "③ B는 하루 다섯 번 메카를 향해 기도하는 규율이 있다.",
+                    "④ C는 남부 아시아에서 기원하였다.",
+                    "⑤ 아메리카 문화권에서는 A가 B보다 신자 수가 많다."
+                ],
+                answer: 2,
+                explanation: "② 불교(A)의 대표적인 종교 경관은 탑과 불상입니다."
+            },
+            {
+                id: "26-06-2-11",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-3. 식민 지배와 비폭력 시민 불복종 (인도)",
+                exam: "2026학년도 6월 고2",
+                number: "11번",
+                points: "1.5점",
+                pageRef: "2026학년도 6월 고2 문제지 3쪽 11번",
+                topic: "인도(A)의 종교 분포(힌두교 다수)와 간디의 소금 행진",
+                stem: "다음 자료에 대한 적절한 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        지도에 표시된 국가 <strong>A(인도)</strong>는 1930년 영국의 식민지였습니다. 간디는 수백 킬로미터를 도보로 행진하며 소금법의 부당함을 알렸습니다. 이 소금 행진은 <u>㉠ 시민불복종</u>의 사례라고 볼 수 있습니다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. A는 전 세계에서 힌두교 신자 수가 가장 많은 국가이다.<br>
+                    ㄴ. A의 주민 대부분은 종교적 율법에 따라 할랄 음식만 먹는다.<br>
+                    ㄷ. ㉠은 개인만의 이익이 아닌 공공의 이익을 위한 것이어야 한다.<br>
+                    ㄹ. ㉠은 부정의한 법과 정책을 바로잡기 위한 합법적인 행위이다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ. 인도(A)는 전 세계에서 힌두교 신자 수가 가장 많은 국가입니다. ㄷ. 시민 불복종은 공공의 이익을 목적으로 해야 합니다."
+            },
+            {
+                id: "26-06-2-19",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 건조 문화권의 문화 관습과 보편 윤리",
+                exam: "2026학년도 6월 고2",
+                number: "19번",
+                points: "1.5점",
+                pageRef: "2026학년도 6월 고2 문제지 5쪽 19번",
+                topic: "건조 문화권(갑국)의 여성 교육 제한 문제와 보편 윤리적 성찰",
+                stem: "밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        <u>㉠ 건조 문화권</u>에 속하는 갑국의 정부는 종교적 관습에 따른 복장 규정 위반 등을 이유로 <u>㉡ 여성</u>의 대학 수업 참여를 금지하는 명령을 내렸다. 이에 <u>㉢ 국제 연합(UN)</u>도 갑국 정부의 <u>㉣ 이러한 명령</u>이 여성을 부당하게 배제하고 있다고 비판하였다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠에서는 이동식 화전 농업이 주로 이루어진다.<br>
+                    ㄴ. ㉡은 갑국에서 사회적 소수자에 해당한다.<br>
+                    ㄷ. ㉢은 비정부 기구에 해당한다.<br>
+                    ㄹ. ㉢은 ㉣이 보편 윤리에 어긋난다고 보았다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ. 교육권을 박탈당하고 차별받는 여성(㉡)은 갑국 내 사회적 소수자에 해당합니다. ㄹ. UN은 여성의 교육권을 박탈한 명령이 인권이라는 보편 윤리에 어긋난다고 보았습니다."
+            },
+            {
+                id: "26-09-2-02",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-2. 문화 변동의 요인 (발견, 발명, 직접 전파, 자극 전파)",
+                exam: "2026학년도 9월 고2",
+                number: "2번",
+                points: "2점",
+                pageRef: "2026학년도 9월 고2 문제지 1쪽 2번",
+                topic: "문화 변동 요인 구분 (직접 전파 A, 발명 B, 발견 C, 자극 전파 D)",
+                stem: "그림은 문화 변동의 요인 A~D를 질문에 따라 구분한 것이다. 이에 대한 설명으로 옳은 것은? (단, A~D는 각각 발견, 발명, 자극 전파, 직접 전파 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>A (직접 전파):</strong> 외재적 요인(예) + 새로운 문화 요소 창조(아니요)</div>
+                        <div>• <strong>B (발명):</strong> 외재적 요인(아니요) + 새로운 문화 요소 창조(예)</div>
+                        <div>• <strong>C (발견):</strong> 외재적 요인(아니요) + 새로운 문화 요소 창조(아니요)</div>
+                        <div>• <strong>D (자극 전파):</strong> 외재적 요인(예) + 새로운 문화 요소 창조(예)</div>
+                    </div>
+                `,
+                choices: [
+                    "① A와 달리 B는 사람 간 대면 접촉을 통해 다른 사회로 문화 요소가 전달되는 것이다.",
+                    "② 자전거 수리공이었던 라이트 형제가 비행기를 만들어 낸 것은 B가 아닌 C의 사례이다.",
+                    "③ 과학자 훅이 세포의 존재를 알아낸 것은 C가 아닌 D의 사례이다.",
+                    "④ D와 달리 A는 문화 병존을 일으키는 요인으로 작용한다.",
+                    "⑤ A로 전달된 타국의 문화 요소로부터 아이디어를 얻어 자국에서 B가 나타났다면 D에 해당한다."
+                ],
+                answer: 5,
+                explanation: "⑤ 직접 전파(A)된 타국의 문화 요소에서 아이디어를 얻어 자국에서 새로운 요소를 발명(B)했다면 이는 자극 전파(D)에 해당합니다."
+            },
+            {
+                id: "26-09-2-10",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권",
+                exam: "2026학년도 9월 고2",
+                number: "10번",
+                points: "2.5점",
+                pageRef: "2026학년도 9월 고2 문제지 3쪽 10번",
+                topic: "세계의 주요 문화권 (유럽, 건조, 동아시아, 앵글로아메리카, 라틴아메리카)",
+                stem: "다음 자료에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>[지도 문화권]</strong> A: 유럽 / B: 건조 / C: 동아시아 / D: 앵글로아메리카 / E: 라틴 아메리카</div>
+                        <div>• <strong>갑:</strong> 한자와 젓가락 사용, 유교와 <u>㉠ 불교</u>의 영향 (C 동아시아)</div>
+                        <div>• <strong>을:</strong> 전통적 유목 발달, <u>㉡ 이슬람교</u> 신봉 (B 건조 문화권)</div>
+                    </div>
+                `,
+                choices: [
+                    "① A에서는 커피 등을 재배하는 플랜테이션 농업이 발달하였다.",
+                    "② 원판을 돌린 결과가 갑은 B, 을은 C라면 각각 1점씩 획득한다.",
+                    "③ D와 달리 E에서는 과거 식민 지배의 영향으로 에스파냐어와 포르투갈어를 주로 사용한다.",
+                    "④ ㉠의 신도들은 하루 다섯 번 메카를 향해 기도한다.",
+                    "⑤ 세금 혜택을 받기 위해 ㉡으로 개종한 사례는 강제적 문화 접변에 해당한다."
+                ],
+                answer: 3,
+                explanation: "③ 앵글로아메리카(D)와 달리 라틴 아메리카(E)는 에스파냐어와 포르투갈어를 주로 사용합니다."
+            },
+            {
+                id: "26-09-2-14",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권 (수단·남수단 종교 분포와 갈등)",
+                exam: "2026학년도 9월 고2",
+                number: "14번",
+                points: "2.5점",
+                pageRef: "2026학년도 9월 고2 문제지 4쪽 14번",
+                topic: "수단(이슬람교)과 남수단(크리스트교)의 종교 분포와 갈퉁의 평화론",
+                stem: "다음 자료에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        북부 아랍계 수단 정부는 <strong>(가) 이슬람교</strong> 신자가 많은 북부 지역을 중심으로 정책을 펼쳤으며, 유럽 식민 지배 영향으로 <strong>(나) 크리스트교</strong> 신자가 많은 남부 지역을 정치적·경제적으로 차별하여 <u>㉡ 무력 충돌(내전)</u>이 발생했고 2011년 남수단이 분리 독립하였다. (<u>㉠ 소극적 평화</u>: 직접적 폭력이 없는 상태)
+                    </div>
+                `,
+                choices: [
+                    "① 구조적 폭력은 ㉠의 방해 요인이 될 수 있다.",
+                    "② 문화적 폭력은 ㉡을 정당화하는 데 이용될 수 없다.",
+                    "③ 적극적 평화는 ㉡의 제거만으로 이루어질 수 있다.",
+                    "④ (가)는 여러 신을 숭배하는 다신교이다.",
+                    "⑤ (나)는 메카로의 성지 순례를 종교적 의무로 한다."
+                ],
+                answer: 1,
+                explanation: "① 구조적 폭력은 직접적 폭력(내전 등)을 유발하여 소극적 평화(㉠)를 방해할 수 있습니다."
+            },
+            {
+                id: "26-09-2-17",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-3. 동아시아 역사 갈등과 영토 문제 (독도, 쿠릴 열도, 동북공정)",
+                exam: "2026학년도 9월 고2",
+                number: "17번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 4쪽 17번",
+                topic: "일본 역사 교과서 왜곡, 독도 영유권 근거(태정관 지령), 동북공정",
+                stem: "밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        검정 심의를 통과한 <u>㉠ 일본의 왜곡된 교과서</u>에서는 강제 동원의 불법성을 인정하지 않고, 대한민국 고유의 영토인 <u>㉡ 독도</u>에 대한 부당한 주장을 담고 있습니다. 참가자들은 <u>㉢ 일본의 진정성 있는 사죄와 반성</u>을 촉구하고 있습니다. (<u>㉣ 자국 중심의 역사관</u>)
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠은 일본의 식민 지배와 침략 전쟁을 정당화하고 있다.<br>
+                    ㄴ. ㉡의 근거로 태정관이 내린 지령(1877년)이 제시될 수 있다.<br>
+                    ㄷ. ㉢을 강화하기 위해 한국, 중국, 일본의 역사학자들이 공동으로 역사 교재를 저술하였다.<br>
+                    ㄹ. ㉣의 일환으로 동북공정이 추진되었다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 1,
+                explanation: "ㄱ(일본 왜곡 교과서의 침략 미화)과 ㄴ(1877년 일본 태정관 지령에서 독도가 일본 영토가 아님을 스스로 인정함)이 옳습니다."
+            },
+            {
+                id: "26-09-2-18",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-1. 세계의 다양한 문화권 (점이 지대)",
+                exam: "2026학년도 9월 고2",
+                number: "18번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 5쪽 18번",
+                topic: "앵글로아메리카(A)와 라틴아메리카(B) 경계의 점이 지대(샌안토니오)",
+                stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        문화권 간 경계 지역에서는 서로 인접한 지역의 특성이 함께 나타나는 <strong>(가) 점이 지대</strong>가 나타난다. 리오그란데강 경계 부근의 샌안토니오에서는 <u>㉠ 상점 간판과 안내문이 영어와 에스파냐어로 함께 표기</u>되어 있다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)는 '점이 지대'이다.<br>
+                    ㄴ. ㉠은 발견에 의한 문화 변동의 사례이다.<br>
+                    ㄷ. A 문화권(앵글로아메리카)은 과거 북서 유럽의 영향을 받아 개신교 신자의 비중이 높다.<br>
+                    ㄹ. B 문화권(라틴아메리카)에는 원주민인 마오리족의 독특한 문화가 이어지고 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ(점이 지대)과 ㄷ(앵글로아메리카의 개신교 비중)이 옳습니다."
+            },
+            {
+                id: "26-09-2-20",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-3. 동아시아 역사 갈등과 영유권 분쟁 (독도, 쿠릴 열도, 동북공정)",
+                exam: "2026학년도 9월 고2",
+                number: "20번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 5쪽 20번",
+                topic: "한·중·일 공동 역사 교재 『평화를 여는 역사』와 영토·역사 분쟁",
+                stem: "다음 자료에 대한 설명으로 옳은 것만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        동아시아의 역사 갈등은 <strong>(가) 일본</strong> 정부가 왜곡된 역사 교과서를 통과시키면서 본격화되었고, <strong>(나) 중국</strong> 정부가 2002년부터 시작한 <u>㉠ 동북 3성 지역의 역사·지리 연구 사업(동북공정)</u>을 통해 갈등이 증폭되었다. 이에 한국, (가), (나)의 학자와 교사 등이 주도하여 <u>㉡ 비정부 기구</u>를 창립하고 공동 역사 교재를 집필하였다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)는 독도에 대한 영유권을 주장하고 있다.<br>
+                    ㄴ. (나)는 쿠릴 열도 남부 4개 섬의 영유권을 주장하며 러시아와 분쟁하고 있다.<br>
+                    ㄷ. ㉠은 고구려 역사에 대한 연구를 포함한다.<br>
+                    ㄹ. ㉡은 일정한 영토와 국민을 바탕으로 하며 주권을 가진 독립적 행위 주체이다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ(일본의 독도 영유권 주장)과 ㄷ(중국의 동북공정은 고구려·발해사를 자국 지방사로 편입하려 함)이 옳습니다. 쿠릴 열도 분쟁 당사국은 일본(가)입니다."
+            },
+            {
+                id: "26-10-2-02",
+                unitCode: "6단원",
+                unitName: "6단원. 문화 지역과 문화 변동",
+                subUnit: "6-2. 문화 변동의 양상과 전통문화 계승",
+                exam: "2026학년도 10월 고2",
+                number: "2번",
+                points: "2점",
+                pageRef: "2026학년도 10월 고2 문제지 1쪽 2번",
+                topic: "파라과이 원주민 과라니족의 전통 수공예 '냔두띠'(문화 융합)",
+                stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        파라과이 토착 원주민인 <u>㉠ 과라니족 여성들은 에스파냐 이주민들로부터 유럽의 바느질 기법을 배웠다.</u> 이후 <u>㉡ 유럽의 바느질 기법을 이용하여 천에 부족의 전통 문양을 수놓아 만드는 수공예품인 냔두띠가 탄생</u>하였다. 공동 수작업으로 만들어지는 <u>㉢ 냔두띠</u>는 예술적 가치를 인정받아 전통 수공예품으로 자리 잡았다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠에는 내재적 요인에 의한 문화 변동이 나타난다.<br>
+                    ㄴ. ㉡에는 전파된 문화와 기존 문화가 결합하여 새로운 문화가 만들어진 문화 변동의 양상이 나타난다.<br>
+                    ㄷ. ㉢은 전통문화가 사회 통합에 부정적인 영향을 미치는 사례이다.<br>
+                    ㄹ. (가)에는 '전통 수공예 방식이 지닌 고유한 가치의 보존과 계승'이 들어갈 수 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ. 유럽의 바느질 기법과 부족의 전통 문양이 결합해 새로운 수공예품(냔두띠)이 탄생한 것은 문화 융합입니다. ㄹ. 전통 수공예의 고유 가치 보존 및 계승 방안이 들어갈 수 있습니다."
+            },
+
+            // ================= 7단원 =================
+            {
+                id: "25-03-1-10",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 지리 정보 체계(GIS)와 공간 의사 결정",
+                exam: "2025학년도 3월 고1",
+                number: "10번",
+                points: "3점",
+                pageRef: "2025학년도 3월 고1 문제지 2쪽 10번",
+                topic: "지리 정보 체계(GIS) 중첩 분석을 활용한 소프트웨어 개발 연구소 최적 입지 선정",
+                stem: "다음 자료를 토대로 지리 정보 체계(GIS)를 활용하여 소프트웨어 개발 연구소를 건설하고자 한다. A~E 중 연구소의 입지로 가장 적합한 국가를 고른 것은? (단, 합산 점수가 가장 높은 국가를 선택함.)",
+                boxContent: `
+                    <div class="text-xs space-y-2">
+                        <table class="w-full text-center border-collapse border border-slate-600 bg-white">
+                            <tr class="font-bold bg-slate-100">
+                                <td class="border border-slate-600 p-1">점수</td>
+                                <td class="border border-slate-600 p-1">코딩 기술 수준</td>
+                                <td class="border border-slate-600 p-1">평균 인건비(달러)</td>
+                                <td class="border border-slate-600 p-1">의사소통 원활 정도</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-600 p-1 font-bold">3점</td>
+                                <td class="border border-slate-600 p-1">매우 우수</td>
+                                <td class="border border-slate-600 p-1">25 미만</td>
+                                <td class="border border-slate-600 p-1">매우 원활</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-600 p-1 font-bold">2점</td>
+                                <td class="border border-slate-600 p-1">우수</td>
+                                <td class="border border-slate-600 p-1">25 이상 40 미만</td>
+                                <td class="border border-slate-600 p-1">원활</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-600 p-1 font-bold">1점</td>
+                                <td class="border border-slate-600 p-1">양호</td>
+                                <td class="border border-slate-600 p-1">40 이상</td>
+                                <td class="border border-slate-600 p-1">양호</td>
+                            </tr>
+                        </table>
+                        <div class="bg-slate-50 p-2 rounded border border-slate-300">
+                            • <strong>A:</strong> 매우 우수(3) + 35달러(2) + 매우 원활(3) = <strong>8점</strong> / • <strong>B:</strong> 3+2+1=6점 / • <strong>C:</strong> 2+3+2=7점 / • <strong>D:</strong> 1+3+3=7점 / • <strong>E:</strong> 2+1+2=5점
+                        </div>
+                    </div>
+                `,
+                choices: ["① A", "② B", "③ C", "④ D", "⑤ E"],
+                answer: 1,
+                explanation: "합산 점수가 8점으로 가장 높은 A국이 최적 입지입니다."
+            },
+            {
+                id: "25-03-1-13",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 인구 변화와 인구 문제",
+                exam: "2025학년도 3월 고1",
+                number: "13번",
+                points: "3점",
+                pageRef: "2025학년도 3월 고1 문제지 3쪽 13번",
+                topic: "말리(A), 프랑스(B), 베트남(C)의 연령층별 인구 비율 비교",
+                stem: "다음 자료는 A~C 국가의 연령층별 인구 비율을 나타낸 것이다. 이에 대한 설명으로 옳은 것만을 <보기>에서 고른 것은? (단, A~C는 각각 말리, 베트남, 프랑스 중 하나임.)",
+                boxContent: `
+                    <table class="w-full text-xs text-center border-collapse border border-slate-600">
+                        <tr class="bg-slate-100 font-bold">
+                            <td class="border border-slate-600 p-1">국가</td>
+                            <td class="border border-slate-600 p-1">유소년층(0~14세, %)</td>
+                            <td class="border border-slate-600 p-1">청장년층(15~64세, %)</td>
+                            <td class="border border-slate-600 p-1">노년층(65세 이상, %)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">A (말리)</td>
+                            <td class="border border-slate-600 p-1">46.8</td>
+                            <td class="border border-slate-600 p-1">50.8</td>
+                            <td class="border border-slate-600 p-1">2.4</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">B (프랑스)</td>
+                            <td class="border border-slate-600 p-1">17.0</td>
+                            <td class="border border-slate-600 p-1">61.6</td>
+                            <td class="border border-slate-600 p-1">21.4</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">C (베트남)</td>
+                            <td class="border border-slate-600 p-1">23.9</td>
+                            <td class="border border-slate-600 p-1">67.9</td>
+                            <td class="border border-slate-600 p-1">8.2</td>
+                        </tr>
+                    </table>
+                `,
+                bogi: `
+                    ㄱ. A는 B보다 출산 장려 정책의 필요성이 클 것이다.<br>
+                    ㄴ. A는 C보다 청장년층 인구 대비 노년층 인구 비율이 낮다.<br>
+                    ㄷ. B는 A보다 평균 수명이 길 것이다.<br>
+                    ㄹ. B는 C보다 청장년층 인구의 비율이 높다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 3,
+                explanation: "ㄴ(노년 부양비 비교)과 ㄷ(선진국인 프랑스의 평균 수명이 더 김)이 옳습니다."
+            },
+            {
+                id: "25-03-1-14",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 자원의 분포와 지속가능한 발전",
+                exam: "2025학년도 3월 고1",
+                number: "14번",
+                points: "3점",
+                pageRef: "2025학년도 3월 고1 문제지 3쪽 14번",
+                topic: "국가별 태양광 발전 현황 및 평균 일사량 버블 차트 분석",
+                stem: "그래프는 국가별 태양광 발전 현황을 나타낸 것이다. 이에 대한 분석으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• 중국: 발전량 원 크기 1위(최대 발전량), 일사량은 세계 평균(약 190 W/m²) 미만</div>
+                        <div>• 칠레: 발전 비율 1위(약 20%), 일사량 높음, 발전량 원 크기 작음</div>
+                        <div>• 대한민국: 태양광 발전 비율 약 5%로 <strong>세계 평균 태양광 발전 비율 가로선 아래(미만)</strong>에 위치함</div>
+                    </div>
+                `,
+                choices: [
+                    "① 영국의 평균 일사량은 독일보다 많다.",
+                    "② 중국의 평균 일사량은 세계 평균 이상이다.",
+                    "③ 태양광 발전량이 가장 많은 국가는 칠레이다.",
+                    "④ 대한민국의 태양광 발전 비율은 세계 평균 미만이다.",
+                    "⑤ 평균 일사량이 많은 국가일수록 태양광 발전량이 많다."
+                ],
+                answer: 4,
+                explanation: "④ 대한민국은 세계 평균 태양광 발전 비율 선보다 아래에 있으므로 세계 평균 미만입니다."
+            },
+            {
+                id: "25-09-1-09",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 산업화와 도시화",
+                exam: "2025학년도 9월 고1",
+                number: "9번",
+                points: "2.5점",
+                pageRef: "2025학년도 9월 고1 문제지 3쪽 9번",
+                topic: "독일(가), 타이(나), 에티오피아(다)의 도시화율과 GDP 산업 구조 비교",
+                stem: "그래프는 (가)~(다) 국가의 도시화율과 국내 총생산(GDP)을 나타낸 것이다. 이에 대한 설명으로 옳은 것은? (단, (가)~(다)는 각각 독일, 에티오피아, 타이 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 독일:</strong> 1950년 도시화율 약 68%, 2022년 약 78%, GDP 최대</div>
+                        <div>• <strong>(나) 타이:</strong> 1950년 도시화율 약 17%, 2022년 약 53%</div>
+                        <div>• <strong>(다) 에티오피아:</strong> 1950년 도시화율 약 5%, 2022년 약 23%, 농림어업 비중 높음</div>
+                    </div>
+                `,
+                choices: [
+                    "① 한국은 (다)보다 국내 총생산에서 농림어업이 차지하는 비율이 높다.",
+                    "② (나)는 (다)보다 서비스업 부가가치액이 많다.",
+                    "③ (다)는 (가)보다 산업화가 시작된 시기가 이르다.",
+                    "④ 타이는 독일보다 1950년 도시화율이 높다.",
+                    "⑤ 에티오피아는 2022년에 도시 인구가 촌락 인구보다 많다."
+                ],
+                answer: 2,
+                explanation: "② 타이(나)는 에티오피아(다)보다 전체 GDP 규모와 서비스업 비율이 모두 높아 서비스업 부가가치액이 많습니다."
+            },
+            {
+                id: "25-09-1-11",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 교통·통신의 발달과 생활 공간의 변화",
+                exam: "2025학년도 9월 고1",
+                number: "11번",
+                points: "1.5점",
+                pageRef: "2025학년도 9월 고1 문제지 3쪽 11번",
+                topic: "대구·경북 광역 철도(대경선) 개통에 따른 지역 변화",
+                stem: "다음 자료를 바탕으로 예상할 수 있는 지역의 변화로 적절한 것은?",
+                boxContent: `
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        2024년 12월 개통한 광역 철도인 대경선(대구·경북)은 구미에서 경산까지 총 61.85km를 잇는 비수도권 최초의 광역 철도로, 7개 역을 1시간 이내에 연결한다.
+                    </div>
+                `,
+                choices: [
+                    "① 경산 주민들의 일상생활 범위가 확대될 것이다.",
+                    "② 구미~경산 간 시·공간적 제약이 증가될 것이다.",
+                    "③ 구미~대구 간 이동하는 평균 시간은 증가될 것이다.",
+                    "④ 광역 철도의 신규 정차역 주변 상권이 축소될 것이다.",
+                    "⑤ 대경선을 이용하는 주민들의 통근권이 축소될 것이다."
+                ],
+                answer: 1,
+                explanation: "① 광역 철도 개통으로 지역 간 접근성이 향상되어 주민들의 통근권과 일상생활 범위가 확대됩니다."
+            },
+            {
+                id: "25-09-1-19",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 지역 조사 방법과 절차",
+                exam: "2025학년도 9월 고1",
+                number: "19번",
+                points: "2점",
+                pageRef: "2025학년도 9월 고1 문제지 5쪽 19번",
+                topic: "하천 생태계 복원 사업과 지역 조사 단계(실내 조사, 야외 조사)",
+                stem: "다음은 지역 조사를 위한 온라인 모둠 활동의 장면이다. 밑줄 친 ㉠~㉤에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-sm space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <u>㉠ 하천 생태계 복원 사업</u> / • <u>㉡ 도시화로 지표의 빗물 흡수 능력 저하</u></div>
+                        <div>• <u>㉢ 항공 사진과 국토 위성 영상 수집</u> / • <u>㉣ 주민 직접 면담 설문 조사</u> / • <u>㉤ 수집 자료 분석 및 정리</u></div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠으로 인해 △△천 주변에 생물종 다양성이 증가할 것이다.",
+                    "② ㉡은 아스팔트 등 포장된 지표의 면적이 감소하였기 때문이다.",
+                    "③ ㉢은 문헌이나 인터넷을 통해 수집할 수 있다.",
+                    "④ ㉣은 지역 조사 단계 중 야외 조사에 해당한다.",
+                    "⑤ ㉤에서는 도표, 그래프, 통계 지도 등을 작성할 수 있다."
+                ],
+                answer: 2,
+                explanation: "② 도시화로 지표의 빗물 흡수 능력이 저하된 것은 포장 면적이 '증가'하였기 때문입니다."
+            },
+            {
+                id: "25-09-1-21",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 산업화와 도시화 (도시 문제)",
+                exam: "2025학년도 9월 고1",
+                number: "21번",
+                points: "2점",
+                pageRef: "2025학년도 9월 고1 문제지 5쪽 21번",
+                topic: "멕시코시티의 급격한 도시 성장(대도시권 형성, 불량 주택, 교통 체증)",
+                stem: "다음 신문 기사의 밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        멕시코시티는 <u>㉠ 고층 건물과 아파트가 증가</u>하며 대도시로 성장하였고 주변에 위성 도시가 등장하면서 <u>㉡ 대도시권</u>이 형성되었다. 불량 주택 지구 형성으로 <u>㉢ 주거권</u> 침해가 우려되며 <u>㉣ 도심에서 심각한 교통 체증이 발생</u>하고 있다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠은 도시의 토지 이용 집약도가 낮아졌음을 보여준다.<br>
+                    ㄴ. ㉡은 대도시와 위성 도시 간의 상호작용으로 형성되었다.<br>
+                    ㄷ. ㉢은 문화생활에 참여하고 예술을 감상하는 혜택을 나누어 가질 권리를 의미한다.<br>
+                    ㄹ. ㉣의 해결 방안으로 승용차 요일제 실시 및 혼잡 통행료 부과 정책이 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ(대도시권 형성)과 ㄹ(교통 체증 완화 정책)이 옳습니다."
+            },
+            {
+                id: "25-09-1-24",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-3. 공간 불평등 문제와 해결 방안",
+                exam: "2025학년도 9월 고1",
+                number: "24번",
+                points: "2점",
+                pageRef: "2025학년도 9월 고1 문제지 6쪽 24번",
+                topic: "사회 계층의 양극화, 사회적 약자 차별, 공간 불평등",
+                stem: "밑줄 친 ㉠~㉢에 대한 옳은 진술에만 모두 'V'를 표시한 학생은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><u>㉠ 사회 계층의 양극화</u>, <u>㉡ 사회적 약자에 대한 차별</u>, <u>㉢ 공간 불평등</u></div>
+                        <div>• 진술1: ㉠은 중위층 비율 증가 현상이다. <strong>(X)</strong></div>
+                        <div>• 진술2: ㉡의 사례로 이주 노동자 임금 체불 문제가 있다. <strong>(O)</strong></div>
+                        <div>• 진술3: ㉢의 원인으로 성장 거점 개발 정책 추진이 있다. <strong>(O)</strong></div>
+                        <div>• 진술4: ㉢은 수도권으로의 공공 기관 이전을 통해 해소한다. <strong>(X - 비수도권 이전)</strong></div>
+                    </div>
+                `,
+                choices: ["① 갑", "② 을", "③ 병", "④ 정", "⑤ 무"],
+                answer: 3,
+                explanation: "진술 2, 3만 옳으므로 ③ 병이 정답입니다."
+            },
+            {
+                id: "25-09-1-25-2",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 산업화와 도시화 (우리나라의 도시화)",
+                exam: "2025학년도 9월 고1",
+                number: "25번(B)",
+                points: "2.5점",
+                pageRef: "2025학년도 10월 고1 문제지 6쪽 25번",
+                topic: "1970년(가)과 2023년(나) 우리나라 시·군별 인구 규모 분포 비교",
+                stem: "지도는 두 시기의 우리나라 시·군별 인구 규모를 나타낸 것이다. 이에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 1970년:</strong> 전국 군 지역 대부분 10만~100만 명 미만, <strong>A(100만 명 이상)</strong>는 서울·부산·대구뿐임.</div>
+                        <div>• <strong>(나) 2023년:</strong> 비수도권 군 지역 대부분 <strong>B(10만 명 미만)</strong>로 감소, 수도권과 대도시에 A 증가.</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가) 시기는 (나) 시기보다 도시화율이 높다.<br>
+                    ㄴ. A는 B보다 인구 밀도가 높다.<br>
+                    ㄷ. B는 A보다 지표의 포장 면적 비율이 높다.<br>
+                    ㄹ. 인구 10만 명~100만 명 미만인 지역의 수는 1970년이 2023년보다 많다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ(대도시인 A의 인구 밀도가 높음)과 ㄹ(1970년에 10만~100만 명 미만 시·군 수가 더 많음)이 옳습니다."
+            },
+            {
+                id: "25-10-1-03",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 지역 조사와 공간 변화",
+                exam: "2025학년도 10월 고1",
+                number: "3번",
+                points: "2점",
+                pageRef: "2025학년도 10월 고1 문제지 1쪽 3번",
+                topic: "간척 사업과 공단·아파트 단지 조성에 따른 지역 변화 및 지역 조사",
+                stem: "위 자료(3~4번 공통 지문)에 대한 옳은 분석만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong><u>㉠ 위성 사진</u> 비교 (1990년 vs 2025년):</strong> 간척 사업 후 공단과 아파트 단지 조성</div>
+                        <div>• <strong>현장 답사 중 <u>㉡ 면담 기록지</u>:</strong> 일자리·인구 증가, 농·어업 종사자 감소</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠을 통해 토지 이용의 변화를 주기적으로 파악할 수 있다.<br>
+                    ㄴ. ㉠은 야외 조사에서 수집하고, ㉡은 실내 조사에서 진행한다.<br>
+                    ㄷ. ○○동은 1990년보다 2025년에 토지 이용의 집약도가 높다.<br>
+                    ㄹ. 공단 조성 이후 ○○동의 1차 산업 종사자 비율은 높아졌다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ과 ㄷ이 옳습니다."
+            },
+            {
+                id: "25-10-1-16",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-3. 공간 불평등 완화 정책 (문화 취약 지역·지방 인재 선발)",
+                exam: "2025학년도 10월 고1",
+                number: "16번",
+                points: "2점",
+                pageRef: "2025학년도 10월 고1 문제지 4쪽 16번",
+                topic: "문화 취약 지역 지원 사업(㉠)과 지방 인재 채용 목표제(㉡)의 공간 불평등 완화",
+                stem: "그림은 우리나라에서 시행되고 있는 정책 소개 자료이다. ㉠, ㉡에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>[㉠ ○○ 사업]</strong> 문화 취약 지역 노인의 문화 예술 향유 기회 확대</div>
+                        <div><strong>[㉡ △△ 제도]</strong> 지방 소재 학교 졸업(예정)자의 공직 진출 지원</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 공공부조에 해당한다.",
+                    "② ㉠은 '업적에 따른 분배'를 통해 분배적 정의를 실현하려는 정책이다.",
+                    "③ ㉡은 적극적 평등 실현 조치로 인해 발생하는 역차별을 줄이기 위한 정책이다.",
+                    "④ ㉠, ㉡ 중 ㉡만이 사회적 약자에 대한 차별을 해소하기 위한 정책이다.",
+                    "⑤ ㉠, ㉡을 통해 공간 불평등 완화를 기대할 수 있다."
+                ],
+                answer: 5,
+                explanation: "⑤ 문화 취약 지역 지원과 지방 인재 공직 진출 지원은 모두 수도권과 비수도권, 도시와 농촌 간 격차를 줄여 공간 불평등을 완화하는 정책입니다."
+            },
+            {
+                id: "25-10-1-21",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 세계화와 다국적 기업의 공간적 분업",
+                exam: "2025학년도 10월 고1",
+                number: "21번",
+                points: "1.5점",
+                pageRef: "2025학년도 10월 고1 문제지 5쪽 21번",
+                topic: "다국적 기업의 공간적 분업 (미국 본사, 스위스 연구소, 베트남 생산 공장)",
+                stem: "다음 자료에 대한 옳은 설명만을 <보기>에서 있는 대로 고른 것은?",
+                boxContent: `
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-300">
+                        <u>㉠ 세계화</u>로 다국적 기업은 <u>㉡ 본사(미국)</u>, 연구소(스위스), <u>㉢ 생산 공장(베트남)</u>을 세계 각지에 두고 운영한다. 개발도상국에 생산 공장이 들어서면 <strong>(가)</strong>와 같은 긍정적 영향이 나타난다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)에는 '일자리 증가'가 들어갈 수 있다.<br>
+                    ㄴ. ㉠이 진행될수록 국제 교류의 시공간적 제약이 커진다.<br>
+                    ㄷ. ㉢은 ㉡보다 생산비 절감이 유리한 곳에 주로 입지한다.
+                `,
+                choices: ["① ㄱ", "② ㄴ", "③ ㄱ, ㄷ", "④ ㄴ, ㄷ", "⑤ ㄱ, ㄴ, ㄷ"],
+                answer: 3,
+                explanation: "ㄱ과 ㄷ이 옳습니다."
+            },
+            {
+                id: "26-03-2-11",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 인구 변화와 인구 문제",
+                exam: "2026학년도 3월 고2",
+                number: "11번",
+                points: "2점",
+                pageRef: "2026학년도 3월 고2 문제지 3쪽 11번",
+                topic: "콩고 민주 공화국(가), 인도(나), 벨기에(다)의 연령층별 인구 구조 비교",
+                stem: "그래프는 세 국가의 연령층별 인구 비율을 나타낸 것이다. 이에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 콩고 민주 공화국:</strong> 유소년층 약 46%, 청장년층 약 51%, 노년층 약 3%</div>
+                        <div>• <strong>(나) 인도:</strong> 유소년층 약 25%, 청장년층 약 68%, 노년층 약 7%</div>
+                        <div>• <strong>(다) 벨기에:</strong> 유소년층 약 16%, 청장년층 약 64%, 노년층 약 20%</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (나)에서 신자 수가 가장 많은 종교는 힌두교이다.<br>
+                    ㄴ. (다)는 세 국가 중 인구 부양비가 가장 낮다.<br>
+                    ㄷ. (나)는 (다)보다 노령화 지수가 낮다.<br>
+                    ㄹ. (다)는 (가)보다 유소년층 인구가 많다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ(인도의 최대 종교는 힌두교)과 ㄷ(인도는 벨기에보다 노령화 지수가 낮음)이 옳습니다."
+            },
+            {
+                id: "26-03-2-16",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 자원의 분포와 이동 (화석 에너지)",
+                exam: "2026학년도 3월 고2",
+                number: "16번",
+                points: "2.5점",
+                pageRef: "2026학년도 3월 고2 문제지 4쪽 16번",
+                topic: "천연가스(가)와 석유(나)의 주요 생산국 분포 및 특성 비교",
+                stem: "지도는 화석 에너지 자원 (가), (나)의 생산량 상위 5개 국가를 나타낸 것이다. 이에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 천연가스:</strong> 미국, 러시아, 이란, 중국, 카타르 (연소 시 오염 물질 배출량 가장 적음)</div>
+                        <div>• <strong>(나) 석유:</strong> 미국, 사우디아라비아, 러시아, 캐나다, 이라크</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. (가)는 (나)보다 국제 이동량이 적다.<br>
+                    ㄴ. A에는 '고생대 지층에 주로 매장되어 있다.'가 들어갈 수 있다.<br>
+                    ㄷ. B에는 '자동차 보급 확산으로 소비량이 급증하였다.'가 들어갈 수 있다.<br>
+                    ㄹ. C에는 '산업 혁명 초기의 주요 에너지 자원이었다.'가 들어갈 수 있다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 1,
+                explanation: "ㄱ. 천연가스(가)는 석유(나)보다 국제 이동량이 적습니다."
+            },
+            {
+                id: "26-03-2-20",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 산업화와 도시화 (우리나라 지역별 특성)",
+                exam: "2026학년도 3월 고2",
+                number: "20번",
+                points: "2점",
+                pageRef: "2026학년도 3월 고2 문제지 5쪽 20번",
+                topic: "경기(A), 세종(B), 전북(C)의 아파트 비율, 논 면적, 총인구 비교",
+                stem: "다음 자료는 A~C 지역의 특성을 상대적으로 비교한 것이다. 이에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• 아파트 비율: 1위 B(세종) &gt; 2위 A(경기) &gt; 3위 C(전북)</div>
+                        <div>• 논 면적: 1위 C(전북) &gt; 2위 A(경기) &gt; 3위 B(세종) / • 총인구: 1위 A &gt; 2위 C &gt; 3위 B</div>
+                    </div>
+                `,
+                choices: [
+                    "① A는 수도권에 속한다.",
+                    "② B는 행정 구역의 일부가 바다와 접한다.",
+                    "③ A는 C보다 3차 산업 종사자가 많다.",
+                    "④ C는 B보다 지역 내 노년층 인구 비율이 높다.",
+                    "⑤ 전북은 세 지역 중 논 면적이 가장 넓다."
+                ],
+                answer: 2,
+                explanation: "② 세종(B)은 내륙에 위치하여 바다와 접하지 않습니다."
+            },
+            {
+                id: "26-03-2-23",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 지역 조사와 혁신 도시의 공간 변화",
+                exam: "2026학년도 3월 고2",
+                number: "23번",
+                points: "1.5점",
+                pageRef: "2026학년도 3월 고2 문제지 6쪽 23번",
+                topic: "혁신 도시 조성에 따른 토지 이용·산업·인구·가치관 변화 보고서",
+                stem: "다음은 학생이 작성한 지역 조사 보고서이다. ㉠~㉤에 대한 설명으로 옳지 않은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• 조사 지역: <u>㉠ 혁신 도시</u> / • 조사 방법: <u>㉡ 항공 사진</u>, <u>㉢ 공무원 면담</u></div>
+                        <div>• 조사 결과: <u>㉣ 서비스업</u> 종사자 증가, <u>㉤ 공동체보다 개인 중시 경향</u> 증가</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠은 공간 불평등을 완화하기 위해 조성되었다.",
+                    "② ㉡의 도로포장 면적 비율은 1996년보다 2024년이 높다.",
+                    "③ ㉢은 지역 조사 과정 중 야외 조사 단계에서 이루어진다.",
+                    "④ ㉣에는 '서비스업'이 들어갈 수 있다.",
+                    "⑤ ㉤의 구체적 양상은 항공 사진으로 파악할 수 있다."
+                ],
+                answer: 5,
+                explanation: "⑤ 주민들의 가치관 변화(㉤)는 항공 사진으로 파악할 수 없습니다."
+            },
+            {
+                id: "26-06-2-08",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 도시 내부 구조 (서울 도심과 주변 지역 비교)",
+                exam: "2026학년도 6월 고2",
+                number: "8번",
+                points: "2.5점",
+                pageRef: "2026학년도 6월 고2 문제지 2쪽 8번",
+                topic: "서울 노원구(주거 지역, 가)와 중구(도심, 나)의 도시 내부 기능 비교",
+                stem: "다음 자료는 지도에 표시된 서울의 두 구(區)에 대한 특성을 나타낸 것이다. (가)와 비교한 (나)의 상대적 특성을 그림의 ㉠~㉤에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 노원구:</strong> 상주인구(504,411명) &gt; 주간 인구(434,895명), 초등학생 수 많음 (주거 기능)</div>
+                        <div>• <strong>(나) 중구(도심):</strong> 주간 인구(380,224명) &gt; 상주인구(118,450명), 사업체 수 많음 → 상업 건물 층수(X) 높음, 주거 용지 비율(Y) 낮음, 출근 유입 인구 비율(Z) 높음 → <strong>㉢</strong></div>
+                    </div>
+                `,
+                choices: ["① ㉠", "② ㉡", "③ ㉢", "④ ㉣", "⑤ ㉤"],
+                answer: 3,
+                explanation: "③ 도심인 중구(나)는 노원구(가)보다 건물 층수가 높고, 주거 용지 비율이 낮으며, 출근 시간대 유입 인구 비율이 높습니다."
+            },
+            {
+                id: "26-06-2-16",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-3. 다문화 사회와 외국인 주민 분포 변화",
+                exam: "2026학년도 6월 고2",
+                number: "16번",
+                points: "2.5점",
+                pageRef: "2026학년도 6월 고2 문제지 4쪽 16번",
+                topic: "우리나라 외국인 주민 비율(2017년 vs 2023년) 및 유형별 구성 변화",
+                stem: "다음 자료에 대한 옳은 분석 및 추론만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• 국내 거주 총인구 중 전체 외국인 주민 비율: <strong>2017년 3.6% → 2023년 4.8%</strong> (총인구도 2023년이 많으므로 전체 외국인 주민 수는 크게 증가함)</div>
+                        <div>• 유형별 비율(2017 → 2023): 외국인 근로자(26.6% → 19.1%), 결혼 이민자(8.6% → 7.3%), 유학생(6.3% → 8.4%), 외국 국적 동포(14.9% → 16.7%)</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. 2017년에는 외국인 근로자 수가 유학생 수의 4배보다 많다.<br>
+                    ㄴ. 결혼 이민자 수는 2023년이 2017년보다 적다.<br>
+                    ㄷ. 2017년 대비 2023년 외국 국적 동포 수의 증가율은 전체 외국인 주민 수의 증가율보다 크다.<br>
+                    ㄹ. 문화 간 차이로 인한 사회적 갈등 발생 가능성은 2017년이 2023년보다 높다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 2,
+                explanation: "ㄱ. 2017년 외국인 근로자 비율(26.6%)은 유학생 비율(6.3%)의 4배(25.2%)보다 큽니다. ㄷ. 전체 외국인 주민 중 외국 국적 동포의 구성 비율이 14.9%에서 16.7%로 상승했으므로, 외국 국적 동포 수 증가율은 전체 외국인 주민 수 증가율보다 큽니다."
+            },
+            {
+                id: "26-06-2-17",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 자원의 분포와 이동 (화석 에너지)",
+                exam: "2026학년도 6월 고2",
+                number: "17번",
+                points: "2점",
+                pageRef: "2026학년도 6월 고2 문제지 5쪽 17번",
+                topic: "천연가스(가)와 석탄(나)의 생산량 상위 3개국 분포 및 특징",
+                stem: "지도는 두 화석 에너지 각각의 생산량 상위 3개 국가를 나타낸 것이다. (가), (나)에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 천연가스:</strong> 미국, 러시아, 이란 / • <strong>(나) 석탄:</strong> 중국, 인도, 인도네시아</div>
+                    </div>
+                `,
+                choices: [
+                    "① (가)는 냉동 액화 기술의 발달로 소비량이 급증하였다.",
+                    "② (가)는 산업 혁명 이후 증기 기관의 연료로 사용되었다.",
+                    "③ (나)는 육상 구간 수송 시 주로 파이프라인이 이용된다.",
+                    "④ (가)는 (나)보다 연소 시 대기 오염 물질의 배출량이 많다.",
+                    "⑤ (나)는 (가)보다 제철 공업에 사용되는 비율이 낮다."
+                ],
+                answer: 1,
+                explanation: "① 천연가스(가)는 냉동 액화 기술(LNG)의 발달로 소비량이 급증하였습니다."
+            },
+            {
+                id: "26-06-2-25",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 인구 변화와 인구 문제",
+                exam: "2026학년도 6월 고2",
+                number: "25번",
+                points: "2.5점",
+                pageRef: "2026학년도 6월 고2 문제지 6쪽 25번",
+                topic: "니제르(가), 서아시아 산유국(나), 유럽 선진국(다)의 인구 구조와 성비",
+                stem: "그래프는 지도에 표시된 세 국가의 연령층별 인구 비율과 성비를 나타낸 것이다. (가)~(다) 국가에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 아프리카 국가:</strong> 유소년층 비율 최고 / • <strong>(나) 서아시아 산유국:</strong> 성비 150 이상 초고성비 / • <strong>(다) 유럽 선진국:</strong> 노년층 비율 최고</div>
+                    </div>
+                `,
+                choices: [
+                    "① (가)는 (다)보다 중위 연령이 높다.",
+                    "② (나)는 (다)보다 합계 출산율이 낮다.",
+                    "③ (다)는 (나)보다 산업화가 시작된 시기가 이르다.",
+                    "④ (가)~(다) 중 총부양비가 가장 높은 국가는 (나)이다.",
+                    "⑤ (가)는 유럽, (나)는 아프리카, (다)는 아시아에 위치한다."
+                ],
+                answer: 3,
+                explanation: "③ 유럽 선진국인 (다)는 서아시아 국가인 (나)보다 산업화가 시작된 시기가 이릅니다."
+            },
+            {
+                id: "26-09-2-05",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 산업화와 도시화",
+                exam: "2026학년도 9월 고2",
+                number: "5번",
+                points: "2점",
+                pageRef: "2026학년도 9월 고2 문제지 2쪽 5번",
+                topic: "에스파냐(가), 타이(나), 니제르(다)의 산업별 종사자 비율과 도시화율",
+                stem: "그래프는 지도에 표시된 세 국가의 산업별 종사자 비율과 도시화율을 나타낸 것이다. 이에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 에스파냐:</strong> 도시화율 약 81% / • <strong>(나) 타이:</strong> 도시화율 약 54% / • <strong>(다) 니제르:</strong> 도시화율 약 17%, 1차 산업 종사자 약 72%</div>
+                    </div>
+                `,
+                choices: [
+                    "① (다)는 촌락 인구가 도시 인구보다 많다.",
+                    "② (가)는 (나)보다 산업화의 시작 시기가 늦다.",
+                    "③ (나)는 (다)보다 1인당 평균 소득이 낮다.",
+                    "④ 니제르는 에스파냐보다 도시화율이 높다.",
+                    "⑤ 타이는 니제르보다 1차 산업 종사자 비율이 높다."
+                ],
+                answer: 1,
+                explanation: "① 니제르(다)는 도시화율이 약 17%이므로 촌락 인구가 도시 인구보다 많습니다."
+            },
+            {
+                id: "26-09-2-19",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 인구 변천 모형과 국가별 인구 특성",
+                exam: "2026학년도 9월 고2",
+                number: "19번",
+                points: "2.5점",
+                pageRef: "2026학년도 9월 고2 문제지 5쪽 19번",
+                topic: "인구 변천 모형과 앙골라(가), 콜롬비아(나), 네덜란드(다)의 인구 특성",
+                stem: "다음 자료는 인구에 대한 것이다. 이에 대한 설명으로 옳은 것은? (단, (가)~(다)는 각각 네덜란드, 앙골라, 콜롬비아 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 앙골라:</strong> 유소년층 44.6%, 노년층 2.8% / • <strong>(나) 콜롬비아:</strong> 유소년층 20.6%, 노년층 9.4% / • <strong>(다) 네덜란드:</strong> 유소년층 15.2%, 노년층 20.2%</div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠(3단계 출생률 급감)의 주요 원인은 여성의 사회 활동 증가 및 산아 제한 정책이다.",
+                    "② ㉡(인구의 자연 감소)은 선진국보다 개발 도상국에서 주로 나타난다.",
+                    "③ (나)는 (다)보다 중위 연령이 높다.",
+                    "④ (다)는 (가)보다 합계 출산율이 높다.",
+                    "⑤ (가)~(다) 중 총부양비는 (다)가 가장 높다."
+                ],
+                answer: 1,
+                explanation: "① 3단계 출생률 급감의 주요 원인은 여성의 사회 진출 확대 및 산아 제한 정책입니다."
+            },
+            {
+                id: "26-09-2-22",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 자원의 분포와 이동 (우리나라의 화석 에너지 수입)",
+                exam: "2026학년도 9월 고2",
+                number: "22번",
+                points: "2점",
+                pageRef: "2026학년도 9월 고2 문제지 6쪽 22번",
+                topic: "우리나라 화석 에너지 수입 현황: 석유(가), 석탄(나), 천연가스(다)",
+                stem: "다음 자료의 (가)~(다)에 대한 설명으로 옳은 것은? (단, (가)~(다)는 각각 석유, 석탄, 천연가스 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>(가) 석유(53.9%):</strong> 사우디·미국·UAE 수입 / • <strong>(나) 석탄(25.7%):</strong> 호주·러시아·인도네시아 수입 / • <strong>(다) 천연가스(20.4%):</strong> 호주·카타르·말레이시아 수입</div>
+                    </div>
+                `,
+                choices: [
+                    "① (가)는 냉동 액화 기술의 발달로 소비량이 급증하였다.",
+                    "② (나)는 신생대 제3기층의 배사 구조에 주로 매장되어 있다.",
+                    "③ (다)는 산업 혁명 시기에 주요 에너지원으로 이용되었다.",
+                    "④ (가)는 (나)보다 수송용으로 이용되는 비율이 높다.",
+                    "⑤ (나)는 (다)보다 상용화된 시기가 늦다."
+                ],
+                answer: 4,
+                explanation: "④ 석유(가)는 석탄(나)보다 수송용으로 이용되는 비율이 높습니다."
+            },
+            {
+                id: "26-09-2-23",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 세계화와 지역화 전략 (지리적 표시제와 공정 무역)",
+                exam: "2026학년도 9월 고2",
+                number: "23번",
+                points: "1.5점",
+                pageRef: "2026학년도 9월 고2 문제지 6쪽 23번",
+                topic: "커피 원두의 지리적 표시제(지역화 전략)와 윤리적 소비·공정 무역",
+                stem: "밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-sm leading-relaxed bg-slate-50 p-3 rounded border border-slate-300">
+                        <u>㉠ 세계화</u>로 상품의 유통 범위가 확대되면서, 갑국의 커피 원두 생산자 단체는 기후, 토양 등 지리적 특징에서 비롯된 생산지의 우수성을 인증받아 해당 지역에서 재배된 경우에만 지명을 사용할 수 있도록 등록하였다. 이는 <u>㉡ 지역화</u>의 우수 사례로 꼽힌다. 한편 다국적 기업 <u>㉢ ○○사</u>에 대한 국제적인 항의 캠페인과 <u>㉣ 윤리적 소비</u>의 확산으로 구매 조건이 공정하게 개선되었다.
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠이 진전될수록 지역 간 상호 의존성은 약화된다.<br>
+                    ㄴ. ㉡의 전략으로 지리적 표시제를 활용하였다.<br>
+                    ㄷ. ㉢의 생산 공장은 주로 선진국의 대도시에 입지한다.<br>
+                    ㄹ. 공정 무역 상품의 구매와 같은 ㉣은 지속가능발전에 기여한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ. 생산지의 지리적 특성을 인증받아 독점적 지명을 사용하는 것은 '지리적 표시제'로 대표적인 지역화 전략입니다. ㄹ. 공정 무역 상품 구매 등 윤리적 소비는 지속가능발전에 기여합니다."
+            },
+            {
+                id: "26-10-2-07",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 인구 변화와 인구 문제 (대륙별 인구 특성)",
+                exam: "2026학년도 10월 고2",
+                number: "7번",
+                points: "2.5점",
+                pageRef: "2026학년도 10월 고2 문제지 2쪽 7번",
+                topic: "유럽(가), 아시아(나), 아프리카(다)의 연령층별 인구 비율 및 자연 증가율",
+                stem: "표는 세 지역(대륙)의 인구 특성을 나타낸 것이다. 이에 대한 설명으로 옳은 것은? (단, (가)~(다)는 각각 아시아, 아프리카, 유럽 중 하나이며, A, B는 각각 유소년층, 노년층 중 하나임.)",
+                boxContent: `
+                    <table class="w-full text-xs text-center border-collapse border border-slate-600">
+                        <tr class="bg-slate-100 font-bold">
+                            <td class="border border-slate-600 p-1">구분</td>
+                            <td class="border border-slate-600 p-1">A (노년층, %)</td>
+                            <td class="border border-slate-600 p-1">청장년층 (%)</td>
+                            <td class="border border-slate-600 p-1">B (유소년층, %)</td>
+                            <td class="border border-slate-600 p-1">자연 증가율(‰)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">(가) 유럽</td>
+                            <td class="border border-slate-600 p-1">20.1</td>
+                            <td class="border border-slate-600 p-1">64.4</td>
+                            <td class="border border-slate-600 p-1">15.5</td>
+                            <td class="border border-slate-600 p-1">-2.6</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">(나) 아시아</td>
+                            <td class="border border-slate-600 p-1">9.8</td>
+                            <td class="border border-slate-600 p-1">67.2</td>
+                            <td class="border border-slate-600 p-1">23.0</td>
+                            <td class="border border-slate-600 p-1">6.6</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-600 p-1 font-bold">(다) 아프리카</td>
+                            <td class="border border-slate-600 p-1">3.6</td>
+                            <td class="border border-slate-600 p-1">57.0</td>
+                            <td class="border border-slate-600 p-1">39.4</td>
+                            <td class="border border-slate-600 p-1">23.4</td>
+                        </tr>
+                    </table>
+                `,
+                choices: [
+                    "① (가)는 (나)보다 유소년 부양비가 높다.",
+                    "② (나)는 (다)보다 중위 연령이 높을 것이다.",
+                    "③ (다)는 (가)보다 합계 출산율이 낮을 것이다.",
+                    "④ 아프리카에서 A는 B보다 인구가 많다.",
+                    "⑤ 아시아에서 사망자 수는 출생자 수보다 많다."
+                ],
+                answer: 2,
+                explanation: "② 아시아(나)는 유소년층 비율이 낮고 노년층 비율이 높아 아프리카(다)보다 중위 연령이 높습니다."
+            },
+            {
+                id: "26-10-2-09",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 지역 조사 방법과 절차 (수도권 신도시·GTX)",
+                exam: "2026학년도 10월 고2",
+                number: "9번",
+                points: "2점",
+                pageRef: "2026학년도 10월 고2 문제지 2쪽 9번",
+                topic: "수도권 신도시 개발 및 수도권 광역 급행 철도(GTX) 개통에 따른 지역 조사",
+                stem: "다음은 지역 조사에 대한 발표 슬라이드의 일부이다. 밑줄 친 ㉠~㉣에 대한 옳은 설명만을 <보기>에서 고른 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>[슬라이드 #1]</strong> <u>㉠ 항공 사진(2000년 vs 2025년)</u> 비교: 신도시 아파트 단지 개발</div>
+                        <div><strong>[슬라이드 #2]</strong> 수도권 광역 급행 철도(GTX) 개통 후 서울 출퇴근 소요 시간 약 40분 감소. <u>㉡ ○○시 공무원과의 현장 면담</u>에서 <u>㉢ 빨대 효과</u> 여부 질문, <u>㉣ 수집한 정보들을 표로 시각화</u>하여 정리.</div>
+                    </div>
+                `,
+                bogi: `
+                    ㄱ. ㉠의 지표 포장 면적은 2000년에 비해 2025년에 감소하였다.<br>
+                    ㄴ. ㉠은 실내 조사, ㉡은 야외 조사에 해당한다.<br>
+                    ㄷ. ㉢은 교통 발달에 따라 대도시의 인구와 경제력이 주변 중소 도시로 분산되는 현상이다.<br>
+                    ㄹ. ㉣은 지역 조사 중 지역 정보의 분석 단계에서 수행한다.
+                `,
+                choices: ["① ㄱ, ㄴ", "② ㄱ, ㄷ", "③ ㄴ, ㄷ", "④ ㄴ, ㄹ", "⑤ ㄷ, ㄹ"],
+                answer: 4,
+                explanation: "ㄴ. 인터넷을 통한 항공 사진 수집(㉠)은 실내 조사, 공무원 현장 면담(㉡)은 야외 조사에 해당합니다. ㄹ. 수집한 정보를 표나 그래프로 시각화하는 작업(㉣)은 지역 정보의 분석 단계에서 수행합니다."
+            },
+            {
+                id: "26-10-2-10",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-1. 산업화와 도시화 (이촌향도와 산업 구조)",
+                exam: "2026학년도 10월 고2",
+                number: "10번",
+                points: "2점",
+                pageRef: "2026학년도 10월 고2 문제지 3쪽 10번",
+                topic: "니제르(가)와 영국(나)의 산업별 종사자 비율 및 도시·촌락 인구 구성",
+                stem: "다음 자료에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• 1차 산업에서 2·3차 산업 중심으로 변화하며 <u>㉠ 이촌향도 현상</u>이 활발해진다.</div>
+                        <div>• <strong>(가) 니제르:</strong> 3차 산업 약 18%, 2차 산업 약 9% (1차 산업 비중 압도적), <strong>A(촌락 인구) &gt; B(도시 인구)</strong></div>
+                        <div>• <strong>(나) 영국:</strong> 3차 산업 약 82%, 2차 산업 약 17%, <strong>B(도시 인구) &gt; A(촌락 인구)</strong></div>
+                    </div>
+                `,
+                choices: [
+                    "① ㉠이 나타나면 A의 비율은 증가하고 B의 비율은 감소한다.",
+                    "② (나)는 촌락 인구가 도시 인구보다 많다.",
+                    "③ (가)는 (나)보다 산업화가 시작된 시기가 늦다.",
+                    "④ (나)는 (가)보다 1차 산업 종사자 비율이 높다.",
+                    "⑤ (가)는 유럽에, (나)는 아프리카에 위치한다."
+                ],
+                answer: 3,
+                explanation: "③ 개발도상국인 니제르(가)는 산업 혁명 발상지인 영국(나)보다 산업화가 시작된 시기가 늦습니다."
+            },
+            {
+                id: "26-10-2-12",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-3. 공간 불평등 문제 (도시와 농촌 간 복지 시설 접근성 격차)",
+                exam: "2026학년도 10월 고2",
+                number: "12번",
+                points: "2.5점",
+                pageRef: "2026학년도 10월 고2 문제지 3쪽 12번",
+                topic: "도시와 농촌 노년층의 사회 보장 제도 인지도 및 복지 시설 접근성 격차",
+                stem: "다음 자료에 대한 설명으로 옳은 것은? (단, A, B는 각각 사회 보험, 사회 서비스 중 하나임.)",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div>• <strong>사회 보장 제도 인지도:</strong> A(사회 보험 - 노인 장기 요양 보험: 도시 47.3%, 농촌 37.1%) / B(사회 서비스 - 노인 맞춤 돌봄 서비스: 도시 36.8%, 농촌 31.9%)</div>
+                        <div>• <strong>복지 시설 도보 이동 시간:</strong> 도시(15분 미만 38.4%, 15~30분 48.3%, 30분 이상 13.3%) vs 농촌(15분 미만 14.2%, 15~30분 29.5%, 30분 이상 56.3%)</div>
+                    </div>
+                `,
+                choices: [
+                    "① A는 비금전적 지원을 원칙으로 한다.",
+                    "② B는 업적에 따른 분배를 통한 분배적 정의의 실현을 목적으로 한다.",
+                    "③ ㉠에서 도시 노년층과 농촌 노년층 간 격차는 사회 보험에 해당하는 제도가 사회 서비스에 해당하는 제도보다 작다.",
+                    "④ ㉡에서 30분 미만에 해당하는 도시 노년층의 비율은 30분 이상에 해당하는 농촌 노년층의 비율보다 낮다.",
+                    "⑤ (가)에는 '농촌 노년층 대상 사회 보장 제도의 홍보 확대 및 농촌 지역 거점 복지 시설 확충'이 들어갈 수 있다."
+                ],
+                answer: 5,
+                explanation: "⑤ 농촌 노년층의 낮은 제도 인지도와 열악한 복지 시설 접근성(30분 이상 도보 이동 56.3%)을 개선하기 위해 홍보 확대 및 거점 복지 시설 확충이 필요합니다."
+            },
+            {
+                id: "26-10-2-24",
+                unitCode: "7단원",
+                unitName: "7단원. 글로벌 교류와 지역 변화",
+                subUnit: "7-2. 자원의 분포와 소비 구조 (세계 1차 에너지 소비)",
+                exam: "2026학년도 10월 고2",
+                number: "24번",
+                points: "2.5점",
+                pageRef: "2026학년도 10월 고2 문제지 6쪽 24번",
+                topic: "세계 1차 에너지 소비 구조: 석유(가)와 석탄(나)의 소비 비중 변화",
+                stem: "(가), (나)에 대한 설명으로 옳은 것은?",
+                boxContent: `
+                    <div class="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-300">
+                        <div><strong>[세계 1차 에너지 소비 비중 (1990 → 2023년)]</strong></div>
+                        <div>• <strong>(가) 석유:</strong> 1990년 약 38% → 2023년 약 32% (세계 1차 에너지 소비 1위, 수송용 연료 비중 높음)</div>
+                        <div>• <strong>(나) 석탄:</strong> 1990년 약 27% → 2023년 약 26% (최대 생산국: 중국)</div>
+                        <div>• 천연가스(약 23%), 수력 및 신·재생 에너지(약 15%), 원자력(약 4%)</div>
+                    </div>
+                `,
+                choices: [
+                    "① (가)의 세계 최대 생산국은 중국이다.",
+                    "② (나) 소비량은 1990년이 2010년보다 많다.",
+                    "③ (가)는 (나)보다 국제 이동량이 많다.",
+                    "④ (나)는 (가)보다 수송용 연료로 사용되는 비중이 높다.",
+                    "⑤ (가) 소비량에 대한 수력 및 신·재생 에너지 소비량의 비율은 1990년에 비해 2023년에 낮아졌다."
+                ],
+                answer: 3,
+                explanation: "③ 석유(가)는 생산지와 소비지가 불일치하여 석탄(나)보다 국제 이동량이 훨씬 많습니다."
+            }
+        ];
+
+        // 상태 관리
+        let currentUnit = "all";
+        let currentExam = "all";
+        let searchQuery = "";
+        let selectedQuestionId = questionsData[0].id;
+        let isQuizMode = true;
+        let userAnswers = {}; // { questionId: selectedChoiceNumber(1~5) }
+
+        // 초기 카운트 계산 및 표시
+        function updateUnitCounts() {
+            document.getElementById("count-all").textContent = questionsData.length;
+            document.getElementById("count-1").textContent = questionsData.filter(q => q.unitCode === "1단원").length;
+            document.getElementById("count-3").textContent = questionsData.filter(q => q.unitCode === "3단원").length;
+            document.getElementById("count-6").textContent = questionsData.filter(q => q.unitCode === "6단원").length;
+            document.getElementById("count-7").textContent = questionsData.filter(q => q.unitCode === "7단원").length;
         }
-      });
-      document.getElementById("explanationBox").classList.remove("hidden");
-    }
 
-    document.getElementById("searchInput").addEventListener("input", renderList);
-    document.getElementById("unitFilter").addEventListener("change", renderList);
-    renderList();
-  </script>
+        // 필터링된 문항 목록 반환
+        function getFilteredQuestions() {
+            return questionsData.filter(q => {
+                const matchUnit = currentUnit === "all" || q.unitCode === currentUnit;
+                const matchExam = currentExam === "all" || q.exam === currentExam;
+                const query = searchQuery.trim().toLowerCase();
+                const matchSearch = !query || 
+                    q.topic.toLowerCase().includes(query) ||
+                    q.subUnit.toLowerCase().includes(query) ||
+                    q.stem.toLowerCase().includes(query) ||
+                    q.exam.toLowerCase().includes(query) ||
+                    q.boxContent.toLowerCase().includes(query);
+                return matchUnit && matchExam && matchSearch;
+            });
+        }
+
+        // 단원 배지 색상
+        function getUnitBadgeStyle(unitCode) {
+            switch(unitCode) {
+                case "1단원": return "bg-amber-100 text-amber-800 border-amber-200";
+                case "3단원": return "bg-emerald-100 text-emerald-800 border-emerald-200";
+                case "6단원": return "bg-purple-100 text-purple-800 border-purple-200";
+                case "7단원": return "bg-blue-100 text-blue-800 border-blue-200";
+                default: return "bg-slate-100 text-slate-800 border-slate-200";
+            }
+        }
+
+        // 왼쪽 문항 리스트 렌더링
+        function renderQuestionList() {
+            const listContainer = document.getElementById("questionListContainer");
+            const filtered = getFilteredQuestions();
+            document.getElementById("filteredCountText").textContent = `총 ${filtered.length}문항`;
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-10 text-center text-slate-400">
+                        <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
+                        <p class="text-sm">조건에 일치하는 문항이 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = filtered.map(q => {
+                const isSelected = q.id === selectedQuestionId;
+                const answered = userAnswers[q.id];
+                let statusIcon = "";
+                if (answered) {
+                    statusIcon = answered === q.answer 
+                        ? `<span class="text-emerald-600 text-xs font-bold"><i class="fa-solid fa-circle-check"></i> 정답</span>`
+                        : `<span class="text-red-500 text-xs font-bold"><i class="fa-solid fa-circle-xmark"></i> 오답</span>`;
+                }
+
+                return `
+                    <div onclick="selectQuestion('${q.id}')" 
+                         class="p-3.5 cursor-pointer transition hover:bg-blue-50/60 ${isSelected ? 'bg-blue-50 border-l-4 border-blue-600' : 'border-l-4 border-transparent'}">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[11px] font-bold px-2 py-0.5 rounded border ${getUnitBadgeStyle(q.unitCode)}">${q.unitCode}</span>
+                                <span class="text-xs font-semibold text-slate-600">${q.exam}</span>
+                                <span class="text-xs font-bold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded">${q.number}</span>
+                            </div>
+                            ${statusIcon}
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-900 leading-snug mb-1">${q.topic}</h3>
+                        <p class="text-[11px] text-slate-500 truncate">${q.subUnit}</p>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // 오른쪽 실제 시험지 스타일 문항 상세 렌더링
+        function renderQuestionViewer() {
+            const viewer = document.getElementById("questionViewerContainer");
+            const q = questionsData.find(item => item.id === selectedQuestionId);
+
+            if (!q) {
+                viewer.innerHTML = `<div class="m-auto text-slate-400 text-sm">문항을 선택해 주세요.</div>`;
+                return;
+            }
+
+            const userChoice = userAnswers[q.id];
+            const showAnswer = !isQuizMode || userChoice !== undefined;
+
+            // 이전/다음 문항 네비게이션
+            const filtered = getFilteredQuestions();
+            const currentIndex = filtered.findIndex(item => item.id === q.id);
+            const prevItem = currentIndex > 0 ? filtered[currentIndex - 1] : null;
+            const nextItem = currentIndex >= 0 && currentIndex < filtered.length - 1 ? filtered[currentIndex + 1] : null;
+
+            viewer.innerHTML = `
+                <div class="max-w-2xl mx-auto w-full space-y-4">
+                    <!-- 상단 메타 및 네비게이션 -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="font-bold px-2 py-0.5 rounded border ${getUnitBadgeStyle(q.unitCode)}">${q.unitName}</span>
+                            <span class="text-slate-400">|</span>
+                            <span class="font-semibold text-slate-600">${q.pageRef}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="${prevItem ? `selectQuestion('${prevItem.id}')` : ''}" ${!prevItem ? 'disabled' : ''} 
+                                class="px-2.5 py-1 rounded border text-xs font-semibold ${prevItem ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed'}">
+                                <i class="fa-solid fa-chevron-left"></i> 이전
+                            </button>
+                            <button onclick="${nextItem ? `selectQuestion('${nextItem.id}')` : ''}" ${!nextItem ? 'disabled' : ''} 
+                                class="px-2.5 py-1 rounded border text-xs font-semibold ${nextItem ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed'}">
+                                다음 <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 실제 모의고사 시험지 카드 -->
+                    <div class="bg-white rounded-xl shadow-sm border-2 border-slate-800 overflow-hidden">
+                        <!-- 시험지 상단 헤더 -->
+                        <div class="exam-header-tag px-5 py-2.5 flex justify-between items-center text-xs text-slate-600">
+                            <span class="font-bold tracking-wider">제4교시 사회탐구 영역 (통합사회)</span>
+                            <span class="font-semibold bg-white px-2 py-0.5 rounded border border-slate-300">${q.exam} · 배점 [${q.points}]</span>
+                        </div>
+
+                        <div class="p-5 md:p-6 space-y-5">
+                            <!-- 발문 -->
+                            <div class="text-base font-bold text-slate-900 leading-relaxed">
+                                <span class="text-blue-700 mr-1">${q.number.replace('번', '')}.</span>
+                                ${q.stem} [${q.points}]
+                            </div>
+
+                            <!-- 제시문 / 도표 / 지도 박스 -->
+                            <div class="exam-box p-4 rounded-sm text-slate-800 leading-relaxed">
+                                ${q.boxContent}
+                            </div>
+
+                            <!-- <보기> 박스 (있는 경우만 렌더링) -->
+                            ${q.bogi ? `
+                                <div class="border border-slate-700 p-4 pt-5 relative bg-white mt-4">
+                                    <span class="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-white px-3 text-xs font-bold tracking-widest text-slate-800">&lt; 보 기 &gt;</span>
+                                    <div class="text-sm leading-relaxed text-slate-800">
+                                        ${q.bogi}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- 5지선다 선지 -->
+                            <div class="space-y-2 pt-1">
+                                ${q.choices.map((choice, idx) => {
+                                    const choiceNum = idx + 1;
+                                    let btnClass = "border-slate-200 bg-white text-slate-800";
+                                    if (showAnswer) {
+                                        if (choiceNum === q.answer) {
+                                            btnClass = "choice-correct";
+                                        } else if (choiceNum === userChoice && userChoice !== q.answer) {
+                                            btnClass = "choice-wrong";
+                                        }
+                                    } else if (choiceNum === userChoice) {
+                                        btnClass = "choice-selected";
+                                    }
+
+                                    return `
+                                        <button onclick="handleChoiceClick('${q.id}', ${choiceNum})" 
+                                            class="choice-btn w-full text-left px-4 py-2.5 rounded-lg border text-sm flex items-center justify-between ${btnClass}">
+                                            <span>${choice}</span>
+                                            ${showAnswer && choiceNum === q.answer ? '<span class="text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">정답</span>' : ''}
+                                            ${showAnswer && choiceNum === userChoice && userChoice !== q.answer ? '<span class="text-xs font-bold bg-red-500 text-white px-2 py-0.5 rounded">선택한 오답</span>' : ''}
+                                        </button>
+                                    `;
+                                }).join("")}
+                            </div>
+
+                            <!-- 정답 및 해설 영역 -->
+                            ${showAnswer ? `
+                                <div class="mt-4 p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 text-sm space-y-1.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-emerald-900 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                                            정답: ${q.answer}번 (${q.choices[q.answer - 1]})
+                                        </span>
+                                        ${userChoice !== undefined ? `
+                                            <button onclick="resetQuestionAnswer('${q.id}')" class="text-xs text-slate-500 hover:text-slate-800 underline">다시 풀기</button>
+                                        ` : ''}
+                                    </div>
+                                    <p class="text-slate-700 leading-relaxed pt-1">${q.explanation}</p>
+                                </div>
+                            ` : `
+                                <div class="text-right">
+                                    <button onclick="revealAnswer('${q.id}')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 underline">
+                                        정답 및 해설 바로 보기
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 이벤트 핸들러 함수들
+        function selectQuestion(id) {
+            selectedQuestionId = id;
+            renderQuestionList();
+            renderQuestionViewer();
+        }
+
+        function handleChoiceClick(questionId, choiceNum) {
+            userAnswers[questionId] = choiceNum;
+            renderQuestionList();
+            renderQuestionViewer();
+        }
+
+        function resetQuestionAnswer(questionId) {
+            delete userAnswers[questionId];
+            renderQuestionList();
+            renderQuestionViewer();
+        }
+
+        function revealAnswer(questionId) {
+            const q = questionsData.find(item => item.id === questionId);
+            if (q) {
+                userAnswers[questionId] = q.answer;
+                renderQuestionList();
+                renderQuestionViewer();
+            }
+        }
+
+        // 필터 및 검색 이벤트 바인딩
+        document.querySelectorAll(".unit-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".unit-tab").forEach(t => {
+                    t.classList.remove("active", "bg-slate-800", "text-white");
+                    t.classList.add("bg-slate-100", "text-slate-600");
+                });
+                tab.classList.add("active", "bg-slate-800", "text-white");
+                tab.classList.remove("bg-slate-100", "text-slate-600");
+
+                currentUnit = tab.dataset.unit;
+                const filtered = getFilteredQuestions();
+                if (filtered.length > 0 && !filtered.some(q => q.id === selectedQuestionId)) {
+                    selectedQuestionId = filtered[0].id;
+                }
+                renderQuestionList();
+                renderQuestionViewer();
+            });
+        });
+
+        document.getElementById("examSelect").addEventListener("change", (e) => {
+            currentExam = e.target.value;
+            const filtered = getFilteredQuestions();
+            if (filtered.length > 0 && !filtered.some(q => q.id === selectedQuestionId)) {
+                selectedQuestionId = filtered[0].id;
+            }
+            renderQuestionList();
+            renderQuestionViewer();
+        });
+
+        document.getElementById("searchInput").addEventListener("input", (e) => {
+            searchQuery = e.target.value;
+            const filtered = getFilteredQuestions();
+            if (filtered.length > 0 && !filtered.some(q => q.id === selectedQuestionId)) {
+                selectedQuestionId = filtered[0].id;
+            }
+            renderQuestionList();
+            renderQuestionViewer();
+        });
+
+        document.getElementById("quizModeToggle").addEventListener("click", function() {
+            isQuizMode = !isQuizMode;
+            if (isQuizMode) {
+                this.classList.remove("bg-emerald-600", "hover:bg-emerald-500");
+                this.classList.add("bg-blue-600", "hover:bg-blue-500");
+                this.innerHTML = `<i class="fa-solid fa-pencil"></i><span>문제 풀이 모드: ON</span>`;
+            } else {
+                this.classList.remove("bg-blue-600", "hover:bg-blue-500");
+                this.classList.add("bg-emerald-600", "hover:bg-emerald-500");
+                this.innerHTML = `<i class="fa-solid fa-book-open"></i><span>정답·해설 바로보기: ON</span>`;
+            }
+            renderQuestionViewer();
+        });
+
+        // 초기 실행
+        updateUnitCounts();
+        renderQuestionList();
+        renderQuestionViewer();
+    </script>
 </body>
 </html>

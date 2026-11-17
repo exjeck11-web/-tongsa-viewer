@@ -6,6 +6,8 @@
     <title>통합사회 지리 기출문제 아카이브 (2025~2026)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js 라이브러리 추가 (원본 PDF에서 문항 영역을 고해상도 이미지로 자동 캡처) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body {
@@ -71,19 +73,31 @@
                 <i class="fa-solid fa-earth-asia text-xl"></i>
             </div>
             <div>
-                <h1 class="text-lg md:text-xl font-bold tracking-tight">통합사회 모의고사 지리 파트 아카이브</h1>
-                <p class="text-xs text-slate-400">2025학년도 고1 (3·6·9·10월) & 2026학년도 고2 (3·6·9·10월) 기출 선별</p>
+                <h1 class="text-lg md:text-xl font-bold tracking-tight">통합사회 모의고사 지리 파트 원본 캡처 아카이브</h1>
+                <p class="text-xs text-slate-400">원본 PDF 자동 크롭 뷰어 · 2025 고1 & 2026 고2 (총 50문항)</p>
             </div>
         </div>
-        <div class="flex items-center space-x-3 mt-2 sm:mt-0">
+        <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+            <!-- 원본 PDF 일괄 연동 버튼 -->
+            <label class="cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span id="pdfStatusText">원본 PDF 6개 파일 불러오기</span>
+                <input type="file" id="pdfFileInput" multiple accept="application/pdf" class="hidden">
+            </label>
+            <!-- 개별 캡처 이미지 폴더 연동 버튼 -->
+            <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1.5" title="images/ 폴더에 캡처 이미지를 넣거나 직접 선택할 수 있습니다">
+                <i class="fa-regular fa-images"></i>
+                <span>캡처 이미지 선택</span>
+                <input type="file" id="imgFileInput" multiple accept="image/*" class="hidden">
+            </label>
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
                 <input type="text" id="searchInput" placeholder="단원, 키워드, 지역 검색..." 
-                    class="pl-9 pr-4 py-1.5 bg-slate-800 text-sm text-white rounded-lg border border-slate-700 focus:outline-none focus:border-blue-500 w-48 md:w-64 transition">
+                    class="pl-9 pr-4 py-1.5 bg-slate-800 text-sm text-white rounded-lg border border-slate-700 focus:outline-none focus:border-blue-500 w-44 md:w-56 transition">
             </div>
             <button id="quizModeToggle" class="bg-blue-600 hover:bg-blue-500 text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center space-x-1.5 shadow">
                 <i class="fa-solid fa-pencil"></i>
-                <span>문제 풀이 모드: ON</span>
+                <span>풀이 모드: ON</span>
             </button>
         </div>
     </header>
@@ -3079,6 +3093,313 @@
         let selectedQuestionId = questionsData[0].id;
         let isQuizMode = true;
         let userAnswers = {}; // { questionId: selectedChoiceNumber(1~5) }
+        let viewMode = "capture"; // 'capture' (원본 캡처 이미지 우선) | 'text' (텍스트 재구성본)
+
+        // PDF.js 워커 설정
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // 로드된 PDF 문서 및 개별 캡처 이미지 캐시
+        const loadedPdfDocs = {}; // { "3월(1학년).pdf": pdfDoc }
+        const customImageBlobs = {}; // { "25-03-1-09": objectUrl }
+        const renderedCropCache = {}; // { "25-03-1-09_0_1": dataUrl }
+        const cropAdjustments = {}; // 사용자가 미세 조정한 상하 여백 저장
+
+        // 시험 회차명 -> 업로드하신 PDF 파일명 매핑
+        const examToPdfFilename = {
+            "2025학년도 3월 고1": "3월(1학년).pdf",
+            "2025학년도 6월 고1": "6월(1학년).pdf",
+            "2025학년도 9월 고1": "9월(1학년).pdf",
+            "2025학년도 10월 고1": "10월(1학년).pdf",
+            "2026학년도 3월 고2": "3월(2학년).pdf",
+            "2026학년도 6월 고2": "6월(2학년).pdf",
+            "2026학년도 9월 고2": "9월(2학년).pdf",
+            "2026학년도 10월 고2": "10월(2학년).pdf"
+        };
+
+        // 각 문항별 원본 PDF 내 정확한 위치 좌표 (page: 페이지 번호, col: 'L' 좌측단 / 'R' 우측단, y1~y2: 상하 비율 0.0~1.0)
+        const pdfCropCoordinates = {
+            // 2025학년도 3월 고1 (3월(1학년).pdf)
+            "25-03-1-05": { file: "3월(1학년).pdf", page: 1, col: "R", y1: 0.44, y2: 0.93 },
+            "25-03-1-08": { file: "3월(1학년).pdf", page: 2, col: "L", y1: 0.67, y2: 0.93 },
+            "25-03-1-09": { file: "3월(1학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.52 },
+            "25-03-1-10": { file: "3월(1학년).pdf", page: 2, col: "R", y1: 0.52, y2: 0.93 },
+            "25-03-1-11": { file: "3월(1학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.50 },
+            "25-03-1-12": { file: "3월(1학년).pdf", page: 3, col: "L", y1: 0.50, y2: 0.93 },
+            "25-03-1-13": { file: "3월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.34 },
+            "25-03-1-14": { file: "3월(1학년).pdf", page: 3, col: "R", y1: 0.34, y2: 0.72 },
+
+            // 2025학년도 6월 고1 (6월(1학년).pdf)
+            "25-06-1-01": { file: "6월(1학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.53 },
+            "25-06-1-02": { file: "6월(1학년).pdf", page: 1, col: "L", y1: 0.53, y2: 0.93 },
+            "25-06-1-03": { file: "6월(1학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.55 },
+            "25-06-1-06": { file: "6월(1학년).pdf", page: 2, col: "L", y1: 0.39, y2: 0.93 },
+            "25-06-1-08": { file: "6월(1학년).pdf", page: 2, col: "R", y1: 0.51, y2: 0.93 },
+            "25-06-1-09": { file: "6월(1학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.42 },
+            "25-06-1-11": { file: "6월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.41 },
+            "25-06-1-13": { file: "6월(1학년).pdf", page: 3, col: "R", y1: 0.67, y2: 0.93 },
+            "25-06-1-14": { file: "6월(1학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.50 },
+            "25-06-1-15": { file: "6월(1학년).pdf", page: 4, col: "L", y1: 0.50, y2: 0.93 },
+            "25-06-1-16": { file: "6월(1학년).pdf", page: 4, col: "R", y1: 0.06, y2: 0.54 },
+            "25-06-1-18": { file: "6월(1학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.43 },
+            "25-06-1-19": { file: "6월(1학년).pdf", page: 5, col: "L", y1: 0.43, y2: 0.93 },
+            "25-06-1-20": { file: "6월(1학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.48 },
+            "25-06-1-21": { file: "6월(1학년).pdf", page: 5, col: "R", y1: 0.48, y2: 0.93 },
+            "25-06-1-22": { file: "6월(1학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.54 },
+            "25-06-1-24": { file: "6월(1학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.45 },
+            "25-06-1-25": { file: "6월(1학년).pdf", page: 6, col: "R", y1: 0.45, y2: 0.93 },
+
+            // 2025학년도 9월 고1 (9월(1학년).pdf)
+            "25-09-1-01": { file: "9월(1학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.62 },
+            "25-09-1-03": { file: "9월(1학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.55 },
+            "25-09-1-05": { file: "9월(1학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.62 },
+            "25-09-1-09": { file: "9월(1학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.52 },
+            "25-09-1-11": { file: "9월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.38 },
+            "25-09-1-12": { file: "9월(1학년).pdf", page: 3, col: "R", y1: 0.38, y2: 0.69 },
+            "25-09-1-14": { file: "9월(1학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.52 },
+            "25-09-1-17": { file: "9월(1학년).pdf", page: 4, col: "R", y1: 0.43, y2: 0.93 },
+            "25-09-1-19": { file: "9월(1학년).pdf", page: 5, col: "L", y1: 0.45, y2: 0.93 },
+            "25-09-1-21": { file: "9월(1학년).pdf", page: 5, col: "R", y1: 0.45, y2: 0.93 },
+            "25-09-1-23": { file: "9월(1학년).pdf", page: 6, col: "L", y1: 0.43, y2: 0.93 },
+            "25-09-1-24": { file: "9월(1학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.48 },
+            "25-09-1-25": { file: "9월(1학년).pdf", page: 6, col: "R", y1: 0.48, y2: 0.93 },
+
+            // 2025학년도 10월 고1 (10월(1학년).pdf)
+            "25-10-1-01": { file: "10월(1학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.56 },
+            "25-10-1-02": { file: "10월(1학년).pdf", page: 1, col: "L", y1: 0.56, y2: 0.93 },
+            "25-10-1-03": { file: "10월(1학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.72 },
+            "25-10-1-04": { file: "10월(1학년).pdf", page: 1, col: "R", y1: 0.70, y2: 0.93 },
+            "25-10-1-08": { file: "10월(1학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.48 },
+            "25-10-1-09": { file: "10월(1학년).pdf", page: 2, col: "R", y1: 0.48, y2: 0.93 },
+            "25-10-1-12": { file: "10월(1학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.54 },
+            "25-10-1-13": { file: "10월(1학년).pdf", page: 3, col: "R", y1: 0.52, y2: 0.93 },
+            "25-10-1-16": { file: "10월(1학년).pdf", page: 4, col: "R", y1: 0.06, y2: 0.45 },
+            "25-10-1-21": { file: "10월(1학년).pdf", page: 5, col: "R", y1: 0.46, y2: 0.93 },
+            "25-09-1-25-2": { file: "10월(1학년).pdf", page: 6, col: "R", y1: 0.46, y2: 0.93 },
+
+            // 2026학년도 3월 고2 (3월(2학년).pdf)
+            "26-03-2-01": { file: "3월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.56 },
+            "26-03-2-03": { file: "3월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.54 },
+            "26-03-2-04": { file: "3월(2학년).pdf", page: 1, col: "R", y1: 0.54, y2: 0.93 },
+            "26-03-2-05": { file: "3월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.48 },
+            "26-03-2-06": { file: "3월(2학년).pdf", page: 2, col: "L", y1: 0.48, y2: 0.93 },
+            "26-03-2-07": { file: "3월(2학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.48 },
+            "26-03-2-08": { file: "3월(2학년).pdf", page: 2, col: "R", y1: 0.48, y2: 0.93 },
+            "26-03-2-11": { file: "3월(2학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.46 },
+            "26-03-2-13": { file: "3월(2학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.50 },
+            "26-03-2-14": { file: "3월(2학년).pdf", page: 4, col: "L", y1: 0.50, y2: 0.93 },
+            "26-03-2-16": { file: "3월(2학년).pdf", page: 4, col: "R", y1: 0.45, y2: 0.93 },
+            "26-03-2-20": { file: "3월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.48 },
+            "26-03-2-23": { file: "3월(2학년).pdf", page: 6, col: "L", y1: 0.43, y2: 0.93 },
+
+            // 2026학년도 6월 고2 (6월(2학년).pdf)
+            "26-06-2-01": { file: "6월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.52 },
+            "26-06-2-03": { file: "6월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.56 },
+            "26-06-2-05": { file: "6월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.52 },
+            "26-06-2-07": { file: "6월(2학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.50 },
+            "26-06-2-08": { file: "6월(2학년).pdf", page: 2, col: "R", y1: 0.50, y2: 0.93 },
+            "26-06-2-11": { file: "6월(2학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.48 },
+            "26-06-2-12": { file: "6월(2학년).pdf", page: 3, col: "R", y1: 0.48, y2: 0.93 },
+            "26-06-2-16": { file: "6월(2학년).pdf", page: 4, col: "R", y1: 0.43, y2: 0.93 },
+            "26-06-2-17": { file: "6월(2학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.46 },
+            "26-06-2-18": { file: "6월(2학년).pdf", page: 5, col: "L", y1: 0.46, y2: 0.93 },
+            "26-06-2-19": { file: "6월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.38 },
+            "26-06-2-22": { file: "6월(2학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.52 },
+            "26-06-2-24": { file: "6월(2학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.48 },
+            "26-06-2-25": { file: "6월(2학년).pdf", page: 6, col: "R", y1: 0.48, y2: 0.93 },
+
+            // 2026학년도 9월 고2 (9월(2학년).pdf)
+            "26-09-2-01": { file: "9월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.55 },
+            "26-09-2-02": { file: "9월(2학년).pdf", page: 1, col: "L", y1: 0.55, y2: 0.93 },
+            "26-09-2-03": { file: "9월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.52 },
+            "26-09-2-05": { file: "9월(2학년).pdf", page: 2, col: "L", y1: 0.06, y2: 0.42 },
+            "26-09-2-06": { file: "9월(2학년).pdf", page: 2, col: "L", y1: 0.42, y2: 0.68 },
+            "26-09-2-08": { file: "9월(2학년).pdf", page: 2, col: "R", y1: 0.06, y2: 0.72 },
+            "26-09-2-10": { file: "9월(2학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.55 },
+            "26-09-2-14": { file: "9월(2학년).pdf", page: 4, col: "L", y1: 0.06, y2: 0.52 },
+            "26-09-2-17": { file: "9월(2학년).pdf", page: 4, col: "R", y1: 0.48, y2: 0.93 },
+            "26-09-2-18": { file: "9월(2학년).pdf", page: 5, col: "L", y1: 0.06, y2: 0.52 },
+            "26-09-2-19": { file: "9월(2학년).pdf", page: 5, col: "L", y1: 0.28, y2: 0.93 },
+            "26-09-2-20": { file: "9월(2학년).pdf", page: 5, col: "R", y1: 0.06, y2: 0.48 },
+            "26-09-2-22": { file: "9월(2학년).pdf", page: 6, col: "L", y1: 0.06, y2: 0.50 },
+            "26-09-2-23": { file: "9월(2학년).pdf", page: 6, col: "L", y1: 0.48, y2: 0.93 },
+            "26-09-2-25": { file: "9월(2학년).pdf", page: 6, col: "R", y1: 0.52, y2: 0.93 },
+
+            // 2026학년도 10월 고2 (10월(2학년).pdf)
+            "26-10-2-01": { file: "10월(2학년).pdf", page: 1, col: "L", y1: 0.14, y2: 0.54 },
+            "26-10-2-02": { file: "10월(2학년).pdf", page: 1, col: "L", y1: 0.54, y2: 0.93 },
+            "26-10-2-03": { file: "10월(2학년).pdf", page: 1, col: "R", y1: 0.14, y2: 0.56 },
+            "26-10-2-07": { file: "10월(2학년).pdf", page: 2, col: "L", y1: 0.62, y2: 0.93 },
+            "26-10-2-09": { file: "10월(2학년).pdf", page: 2, col: "R", y1: 0.36, y2: 0.93 },
+            "26-10-2-10": { file: "10월(2학년).pdf", page: 3, col: "L", y1: 0.06, y2: 0.50 },
+            "26-10-2-12": { file: "10월(2학년).pdf", page: 3, col: "R", y1: 0.06, y2: 0.55 },
+            "26-10-2-24": { file: "10월(2학년).pdf", page: 6, col: "R", y1: 0.06, y2: 0.72 },
+            "26-10-2-25": { file: "10월(2학년).pdf", page: 6, col: "R", y1: 0.35, y2: 0.93 }
+        };
+
+        // 동일 폴더에 PDF 파일이 있을 경우 자동으로 fetch 시도 (GitHub/Vercel 배포 시 편리)
+        async function tryAutoLoadPdfs() {
+            const pdfFiles = Object.values(examToPdfFilename);
+            const uniqueFiles = [...new Set(pdfFiles)];
+            let loadedCount = 0;
+
+            for (const fileName of uniqueFiles) {
+                try {
+                    const response = await fetch(`./${encodeURIComponent(fileName)}`);
+                    if (response.ok) {
+                        const arrayBuffer = await response.arrayBuffer();
+                        const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                        loadedPdfDocs[fileName] = pdfDoc;
+                        loadedCount++;
+                    }
+                } catch (e) {
+                    // 로컬 파일 시스템이나 PDF 미업로드 상태에서는 무시
+                }
+            }
+            if (loadedCount > 0) {
+                updatePdfStatusBadge();
+                renderQuestionViewer();
+            }
+        }
+
+        function updatePdfStatusBadge() {
+            const count = Object.keys(loadedPdfDocs).length;
+            const statusEl = document.getElementById("pdfStatusText");
+            if (count > 0) {
+                statusEl.textContent = `원본 PDF ${count}개 연동됨 (추가 선택)`;
+            }
+        }
+
+        // 사용자가 PDF 파일을 직접 선택했을 때 처리
+        document.getElementById("pdfFileInput").addEventListener("change", async (e) => {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            const statusEl = document.getElementById("pdfStatusText");
+            statusEl.textContent = "PDF 분석 및 캡처 준비 중...";
+
+            for (const file of files) {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    // 파일명 매칭 (공백 제거 등 유연한 매칭 지원)
+                    const cleanName = file.name.replace(/\s+/g, "");
+                    let matchedKey = file.name;
+                    for (const stdName of Object.values(examToPdfFilename)) {
+                        if (cleanName.includes(stdName.replace(".pdf", ""))) {
+                            matchedKey = stdName;
+                            break;
+                        }
+                    }
+                    loadedPdfDocs[matchedKey] = pdfDoc;
+                } catch (err) {
+                    console.error("PDF 로드 오류:", file.name, err);
+                }
+            }
+
+            // 기존 캡처 캐시 초기화 후 현재 문항 즉시 렌더링
+            Object.keys(renderedCropCache).forEach(k => delete renderedCropCache[k]);
+            updatePdfStatusBadge();
+            renderQuestionViewer();
+        });
+
+        // 사용자가 개별 캡처 이미지 파일(예: 25-03-1-09.png 등)을 선택했을 때 처리
+        document.getElementById("imgFileInput").addEventListener("change", (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const baseName = file.name.replace(/\.[^/.]+$/, "");
+                customImageBlobs[baseName] = URL.createObjectURL(file);
+            });
+            renderQuestionViewer();
+        });
+
+        // PDF에서 특정 문항 영역만 크롭하여 Canvas -> DataURL 이미지로 추출
+        async function cropQuestionFromPdf(questionId) {
+            const q = questionsData.find(item => item.id === questionId);
+            if (!q) return null;
+
+            const coord = pdfCropCoordinates[questionId] || {
+                file: examToPdfFilename[q.exam],
+                page: 1,
+                col: "L",
+                y1: 0.1,
+                y2: 0.6
+            };
+
+            const adj = cropAdjustments[questionId] || { dy1: 0, dy2: 0, fullPage: false };
+            const cacheKey = `${questionId}_${adj.dy1}_${adj.dy2}_${adj.fullPage}`;
+            if (renderedCropCache[cacheKey]) {
+                return renderedCropCache[cacheKey];
+            }
+
+            const pdfDoc = loadedPdfDocs[coord.file];
+            if (!pdfDoc) return null;
+
+            try {
+                const page = await pdfDoc.getPage(coord.page);
+                const scale = 2.4; // 선명한 고해상도 스캔본 품질
+                const viewport = page.getViewport({ scale });
+
+                const offCanvas = document.createElement("canvas");
+                offCanvas.width = viewport.width;
+                offCanvas.height = viewport.height;
+                const ctx = offCanvas.getContext("2d");
+
+                await page.render({ canvasContext: ctx, viewport }).promise;
+
+                if (adj.fullPage) {
+                    const fullDataUrl = offCanvas.toDataURL("image/png");
+                    renderedCropCache[cacheKey] = fullDataUrl;
+                    return fullDataUrl;
+                }
+
+                // 좌/우 단(Column) 및 상/하(y1, y2) 영역 계산
+                const x1Ratio = coord.col === "L" ? 0.035 : 0.495;
+                const x2Ratio = coord.col === "L" ? 0.505 : 0.965;
+                const y1Ratio = Math.max(0.02, Math.min(0.90, coord.y1 + adj.dy1));
+                const y2Ratio = Math.max(y1Ratio + 0.10, Math.min(0.98, coord.y2 + adj.dy2));
+
+                const sx = Math.floor(viewport.width * x1Ratio);
+                const sy = Math.floor(viewport.height * y1Ratio);
+                const sw = Math.floor(viewport.width * (x2Ratio - x1Ratio));
+                const sh = Math.floor(viewport.height * (y2Ratio - y1Ratio));
+
+                const cropCanvas = document.createElement("canvas");
+                cropCanvas.width = sw;
+                cropCanvas.height = sh;
+                const cropCtx = cropCanvas.getContext("2d");
+
+                cropCtx.fillStyle = "#ffffff";
+                cropCtx.fillRect(0, 0, sw, sh);
+                cropCtx.drawImage(offCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+                const dataUrl = cropCanvas.toDataURL("image/png");
+                renderedCropCache[cacheKey] = dataUrl;
+                return dataUrl;
+            } catch (err) {
+                console.error("문항 캡처 오류:", err);
+                return null;
+            }
+        }
+
+        // 캡처 영역 미세 조정 함수 (상단/하단 확장 또는 전체 페이지 보기)
+        function adjustCropRange(questionId, type) {
+            if (!cropAdjustments[questionId]) {
+                cropAdjustments[questionId] = { dy1: 0, dy2: 0, fullPage: false };
+            }
+            const adj = cropAdjustments[questionId];
+            if (type === "up") adj.dy1 -= 0.06;
+            if (type === "down") adj.dy2 += 0.08;
+            if (type === "reset") { adj.dy1 = 0; adj.dy2 = 0; adj.fullPage = false; }
+            if (type === "full") adj.fullPage = !adj.fullPage;
+            renderQuestionViewer();
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            renderQuestionViewer();
+        }
 
         // 초기 카운트 계산 및 표시
         function updateUnitCounts() {
@@ -3160,8 +3481,8 @@
             }).join("");
         }
 
-        // 오른쪽 실제 시험지 스타일 문항 상세 렌더링
-        function renderQuestionViewer() {
+        // 오른쪽 실제 원본 캡처 이미지 & 문항 상세 렌더링
+        async function renderQuestionViewer() {
             const viewer = document.getElementById("questionViewerContainer");
             const q = questionsData.find(item => item.id === selectedQuestionId);
 
@@ -3179,9 +3500,13 @@
             const prevItem = currentIndex > 0 ? filtered[currentIndex - 1] : null;
             const nextItem = currentIndex >= 0 && currentIndex < filtered.length - 1 ? filtered[currentIndex + 1] : null;
 
+            const coord = pdfCropCoordinates[q.id] || { file: examToPdfFilename[q.exam], page: 1, col: "L" };
+            const hasPdfLoaded = !!loadedPdfDocs[coord.file];
+            const customImgUrl = customImageBlobs[q.id];
+
             viewer.innerHTML = `
                 <div class="max-w-2xl mx-auto w-full space-y-4">
-                    <!-- 상단 메타 및 네비게이션 -->
+                    <!-- 상단 메타 및 뷰 모드 전환 바 -->
                     <div class="flex flex-wrap items-center justify-between gap-2 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-slate-200">
                         <div class="flex items-center gap-2 text-xs">
                             <span class="font-bold px-2 py-0.5 rounded border ${getUnitBadgeStyle(q.unitCode)}">${q.unitName}</span>
@@ -3189,6 +3514,15 @@
                             <span class="font-semibold text-slate-600">${q.pageRef}</span>
                         </div>
                         <div class="flex items-center gap-1.5">
+                            <!-- 원본 캡처 이미지 vs 텍스트 재구성본 전환 탭 -->
+                            <div class="inline-flex rounded-lg border border-slate-300 p-0.5 bg-slate-100 mr-2">
+                                <button onclick="setViewMode('capture')" class="px-2.5 py-1 rounded-md text-xs font-bold transition ${viewMode === 'capture' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+                                    <i class="fa-solid fa-camera mr-1"></i>원본 캡처 이미지
+                                </button>
+                                <button onclick="setViewMode('text')" class="px-2.5 py-1 rounded-md text-xs font-bold transition ${viewMode === 'text' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+                                    <i class="fa-solid fa-align-left mr-1"></i>텍스트 재구성본
+                                </button>
+                            </div>
                             <button onclick="${prevItem ? `selectQuestion('${prevItem.id}')` : ''}" ${!prevItem ? 'disabled' : ''} 
                                 class="px-2.5 py-1 rounded border text-xs font-semibold ${prevItem ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed'}">
                                 <i class="fa-solid fa-chevron-left"></i> 이전
@@ -3200,60 +3534,112 @@
                         </div>
                     </div>
 
-                    <!-- 실제 모의고사 시험지 카드 -->
+                    <!-- 문항 표시 카드 -->
                     <div class="bg-white rounded-xl shadow-sm border-2 border-slate-800 overflow-hidden">
                         <!-- 시험지 상단 헤더 -->
-                        <div class="exam-header-tag px-5 py-2.5 flex justify-between items-center text-xs text-slate-600">
-                            <span class="font-bold tracking-wider">제4교시 사회탐구 영역 (통합사회)</span>
-                            <span class="font-semibold bg-white px-2 py-0.5 rounded border border-slate-300">${q.exam} · 배점 [${q.points}]</span>
+                        <div class="exam-header-tag px-5 py-2.5 flex flex-wrap justify-between items-center gap-2 text-xs text-slate-600">
+                            <span class="font-bold tracking-wider">제4교시 사회탐구 영역 (통합사회) · 원본 문항 뷰어</span>
+                            <div class="flex items-center gap-1.5">
+                                ${viewMode === 'capture' && hasPdfLoaded ? `
+                                    <button onclick="adjustCropRange('${q.id}', 'up')" class="px-2 py-0.5 bg-white hover:bg-slate-100 border border-slate-300 rounded text-[11px] font-semibold" title="위쪽 여백 더 보기">▲ 위쪽 확장</button>
+                                    <button onclick="adjustCropRange('${q.id}', 'down')" class="px-2 py-0.5 bg-white hover:bg-slate-100 border border-slate-300 rounded text-[11px] font-semibold" title="아래쪽 여백 더 보기">▼ 아래쪽 확장</button>
+                                    <button onclick="adjustCropRange('${q.id}', 'full')" class="px-2 py-0.5 bg-white hover:bg-slate-100 border border-slate-300 rounded text-[11px] font-semibold">전체 쪽 보기</button>
+                                    <button onclick="adjustCropRange('${q.id}', 'reset')" class="px-2 py-0.5 bg-white hover:bg-slate-100 border border-slate-300 rounded text-[11px] text-slate-500">초기화</button>
+                                ` : ''}
+                                <span class="font-semibold bg-white px-2 py-0.5 rounded border border-slate-300">${q.exam} ${q.number} [${q.points}]</span>
+                            </div>
                         </div>
 
                         <div class="p-5 md:p-6 space-y-5">
-                            <!-- 발문 -->
-                            <div class="text-base font-bold text-slate-900 leading-relaxed">
-                                <span class="text-blue-700 mr-1">${q.number.replace('번', '')}.</span>
-                                ${q.stem} [${q.points}]
-                            </div>
-
-                            <!-- 제시문 / 도표 / 지도 박스 -->
-                            <div class="exam-box p-4 rounded-sm text-slate-800 leading-relaxed">
-                                ${q.boxContent}
-                            </div>
-
-                            <!-- <보기> 박스 (있는 경우만 렌더링) -->
-                            ${q.bogi ? `
-                                <div class="border border-slate-700 p-4 pt-5 relative bg-white mt-4">
-                                    <span class="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-white px-3 text-xs font-bold tracking-widest text-slate-800">&lt; 보 기 &gt;</span>
-                                    <div class="text-sm leading-relaxed text-slate-800">
-                                        ${q.bogi}
-                                    </div>
+                            ${viewMode === 'capture' ? `
+                                <!-- 원본 시험지 캡처 이미지 표시 영역 -->
+                                <div id="captureImageWrapper" class="border border-slate-300 rounded-lg bg-white p-2 flex flex-col items-center justify-center min-h-[320px] relative overflow-hidden">
+                                    ${customImgUrl ? `
+                                        <img src="${customImgUrl}" alt="${q.exam} ${q.number} 원본 캡처" class="max-w-full h-auto rounded shadow-sm" />
+                                    ` : hasPdfLoaded ? `
+                                        <div class="py-16 text-center text-slate-500 text-sm flex flex-col items-center gap-2">
+                                            <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600"></i>
+                                            <span>원본 PDF(${coord.file} ${coord.page}쪽)에서 <strong>${q.number}</strong> 문항을 캡처하고 있습니다...</span>
+                                        </div>
+                                    ` : `
+                                        <!-- images/{id}.png 자동 로드 시도 후 실패 시 PDF 선택 안내창 표시 -->
+                                        <img src="./images/${q.id}.png" alt="${q.exam} ${q.number} 원본 캡처" 
+                                             class="max-w-full h-auto rounded shadow-sm"
+                                             onerror="this.style.display='none'; document.getElementById('pdfFallbackGuide').classList.remove('hidden');" />
+                                        <div id="pdfFallbackGuide" class="hidden w-full p-6 text-center space-y-4 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                                            <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-xl">
+                                                <i class="fa-solid fa-file-pdf"></i>
+                                            </div>
+                                            <div class="space-y-1">
+                                                <h4 class="text-base font-bold text-slate-900">원본 시험지 캡처 화면을 띄우려면 PDF 파일을 선택해 주세요!</h4>
+                                                <p class="text-xs text-slate-600 leading-relaxed max-w-md mx-auto">
+                                                    상단 노란색 <strong>[원본 PDF 6개 파일 불러오기]</strong> 버튼을 눌러 가지고 계신 모의고사 PDF 파일(예: <code>${coord.file}</code>)을 한 번만 선택해 주시면, 각 문항의 좌표(<strong>${coord.page}쪽 ${coord.col === 'L' ? '왼쪽 단' : '오른쪽 단'}</strong>)를 자동으로 크롭하여 실제 시험지 캡처 이미지 그대로 보여줍니다.
+                                                </p>
+                                            </div>
+                                            <div class="flex flex-wrap justify-center gap-2 pt-1">
+                                                <label class="cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-4 py-2.5 rounded-lg transition inline-flex items-center gap-1.5 shadow">
+                                                    <i class="fa-solid fa-folder-open"></i>
+                                                    <span>지금 PDF 파일 선택하기 (${coord.file})</span>
+                                                    <input type="file" multiple accept="application/pdf" class="hidden" onchange="document.getElementById('pdfFileInput').files = this.files; document.getElementById('pdfFileInput').dispatchEvent(new Event('change'));">
+                                                </label>
+                                                <button onclick="setViewMode('text')" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold px-3.5 py-2.5 rounded-lg transition">
+                                                    임시로 텍스트 재구성본 보기
+                                                </button>
+                                            </div>
+                                            <p class="text-[11px] text-slate-400">
+                                                💡 GitHub & Vercel 배포 시 저장소에 PDF 파일(<code>3월(1학년).pdf</code> 등)을 함께 올려두시면 별도 선택 없이 접속 즉시 원본 캡처 화면이 자동으로 나타납니다.
+                                            </p>
+                                        </div>
+                                    `}
                                 </div>
-                            ` : ''}
+                            ` : `
+                                <!-- 텍스트 재구성 모드 -->
+                                <div class="text-base font-bold text-slate-900 leading-relaxed">
+                                    <span class="text-blue-700 mr-1">${q.number.replace('번', '')}.</span>
+                                    ${q.stem} [${q.points}]
+                                </div>
+                                <div class="exam-box p-4 rounded-sm text-slate-800 leading-relaxed">
+                                    ${q.boxContent}
+                                </div>
+                                ${q.bogi ? `
+                                    <div class="border border-slate-700 p-4 pt-5 relative bg-white mt-4">
+                                        <span class="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-white px-3 text-xs font-bold tracking-widest text-slate-800">&lt; 보 기 &gt;</span>
+                                        <div class="text-sm leading-relaxed text-slate-800">
+                                            ${q.bogi}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            `}
 
-                            <!-- 5지선다 선지 -->
-                            <div class="space-y-2 pt-1">
-                                ${q.choices.map((choice, idx) => {
-                                    const choiceNum = idx + 1;
-                                    let btnClass = "border-slate-200 bg-white text-slate-800";
-                                    if (showAnswer) {
-                                        if (choiceNum === q.answer) {
-                                            btnClass = "choice-correct";
-                                        } else if (choiceNum === userChoice && userChoice !== q.answer) {
-                                            btnClass = "choice-wrong";
+                            <!-- 인터랙티브 정답 선택 버튼 (원본 이미지 아래에서 바로 클릭하며 채점 가능) -->
+                            <div class="pt-2 border-t border-slate-200">
+                                <div class="text-xs font-bold text-slate-500 mb-2 flex items-center justify-between">
+                                    <span><i class="fa-regular fa-hand-pointer mr-1"></i>답안 선택 (클릭하여 정답 확인)</span>
+                                    <span class="text-[11px] font-normal text-slate-400">${q.topic}</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                                    ${q.choices.map((choice, idx) => {
+                                        const choiceNum = idx + 1;
+                                        let btnClass = "border-slate-200 bg-white text-slate-800";
+                                        if (showAnswer) {
+                                            if (choiceNum === q.answer) {
+                                                btnClass = "choice-correct";
+                                            } else if (choiceNum === userChoice && userChoice !== q.answer) {
+                                                btnClass = "choice-wrong";
+                                            }
+                                        } else if (choiceNum === userChoice) {
+                                            btnClass = "choice-selected";
                                         }
-                                    } else if (choiceNum === userChoice) {
-                                        btnClass = "choice-selected";
-                                    }
 
-                                    return `
-                                        <button onclick="handleChoiceClick('${q.id}', ${choiceNum})" 
-                                            class="choice-btn w-full text-left px-4 py-2.5 rounded-lg border text-sm flex items-center justify-between ${btnClass}">
-                                            <span>${choice}</span>
-                                            ${showAnswer && choiceNum === q.answer ? '<span class="text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">정답</span>' : ''}
-                                            ${showAnswer && choiceNum === userChoice && userChoice !== q.answer ? '<span class="text-xs font-bold bg-red-500 text-white px-2 py-0.5 rounded">선택한 오답</span>' : ''}
-                                        </button>
-                                    `;
-                                }).join("")}
+                                        return `
+                                            <button onclick="handleChoiceClick('${q.id}', ${choiceNum})" 
+                                                class="choice-btn text-left px-3 py-2 rounded-lg border text-xs flex items-center justify-between ${btnClass}">
+                                                <span class="truncate" title="${choice}">${choice}</span>
+                                                ${showAnswer && choiceNum === q.answer ? '<i class="fa-solid fa-check text-emerald-600 ml-1 shrink-0"></i>' : ''}
+                                            </button>
+                                        `;
+                                    }).join("")}
+                                </div>
                             </div>
 
                             <!-- 정답 및 해설 영역 -->
@@ -3281,6 +3667,17 @@
                     </div>
                 </div>
             `;
+
+            // PDF가 로드되어 있고 캡처 모드인 경우 비동기로 크롭 이미지를 생성해 삽입
+            if (viewMode === "capture" && !customImgUrl && hasPdfLoaded) {
+                const croppedDataUrl = await cropQuestionFromPdf(q.id);
+                const wrapper = document.getElementById("captureImageWrapper");
+                if (wrapper && croppedDataUrl && selectedQuestionId === q.id) {
+                    wrapper.innerHTML = `
+                        <img src="${croppedDataUrl}" alt="${q.exam} ${q.number} 원본 캡처" class="max-w-full h-auto rounded shadow-sm" />
+                    `;
+                }
+            }
         }
 
         // 이벤트 핸들러 함수들
@@ -3369,6 +3766,7 @@
         updateUnitCounts();
         renderQuestionList();
         renderQuestionViewer();
+        tryAutoLoadPdfs();
     </script>
 </body>
 </html>
